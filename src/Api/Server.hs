@@ -59,5 +59,5 @@ getSwagger = toSwagger tokenApi
 startServer :: IO ()
 startServer = do
   cfg <- makeAppConfig
-  let server = pure getSwagger :<|> (enter (transformAppHandler cfg) tokenServer)
+  let server = pure getSwagger :<|> enter (transformAppHandler cfg) tokenServer
   run 9000 $ serve api server

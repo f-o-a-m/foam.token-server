@@ -15,11 +15,11 @@ clean:
 	stack clean
 
 hlint:
-	hlint api server "--ignore=Parse error" -XTypeApplications
+	hlint src "--ignore=Parse error" -XTypeApplications
 
 stylish:
-	find ./server -name "*.hs" | xargs stylish-haskell -c ./.stylish_haskell.yaml -i
-	find ./api -name "*.hs" | xargs stylish-haskell -c ./.stylish_haskell.yaml -i
+	find ./src -name "*.hs" | xargs stylish-haskell -c ./.stylish_haskell.yaml -i
+	find ./app -name "*.hs" | xargs stylish-haskell -c ./.stylish_haskell.yaml -i
 
 token-server: stack
 	PGHOST=$(PGHOST) \

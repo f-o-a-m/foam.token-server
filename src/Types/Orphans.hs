@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Types.Orphans where
 
-import Composite.Record ((:->)(Val))
-import Data.Int (Int64)
-import Data.Proxy (Proxy(Proxy))
-import Data.Swagger (ToParamSchema, toParamSchema)
-import Web.HttpApiData (ToHttpApiData, FromHttpApiData)
+import           Composite.Record ((:->) (Val))
+import           Data.Int         (Int64)
+import           Data.Proxy       (Proxy (Proxy))
+import           Data.Swagger     (ToParamSchema, toParamSchema)
+import           Web.HttpApiData  (FromHttpApiData, ToHttpApiData)
 
 -- Orphan instances for using `s :-> a` as a @Servant.Capture@ or @Servant.QueryParam@
 instance ToParamSchema a => ToParamSchema (s :-> a) where

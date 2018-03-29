@@ -6,17 +6,19 @@ module Types.Application
   , web3Request
   ) where
 
-import Control.Monad.IO.Class (MonadIO(..))
-import Control.Monad.Reader (MonadReader, ReaderT, runReaderT)
-import Control.Monad.Except (ExceptT, MonadError)
-import Control.Natural (wrapNT)
-import Database.PostgreSQL.Simple (Connection, ConnectInfo(..), connect)
-import Network.Ethereum.Web3.Provider
-import Network.Ethereum.Web3.Types (Web3, Web3Error)
-import Servant (ServantErr)
-import Servant.Server ((:~>)(..), Handler(..))
-import           System.IO.Unsafe                (unsafePerformIO)
-import System.Environment (getEnv)
+import           Control.Monad.Except           (ExceptT, MonadError)
+import           Control.Monad.IO.Class         (MonadIO (..))
+import           Control.Monad.Reader           (MonadReader, ReaderT,
+                                                 runReaderT)
+import           Control.Natural                (wrapNT)
+import           Database.PostgreSQL.Simple     (ConnectInfo (..), Connection,
+                                                 connect)
+import           Network.Ethereum.Web3.Provider
+import           Network.Ethereum.Web3.Types    (Web3, Web3Error)
+import           Servant                        (ServantErr)
+import           Servant.Server                 ((:~>) (..), Handler (..))
+import           System.Environment             (getEnv)
+import           System.IO.Unsafe               (unsafePerformIO)
 
 
 -- | Web3 Config
@@ -37,7 +39,7 @@ web3Request
 web3Request action = liftIO $ runWeb3 action
 
 -- | App Config
-data AppConfig =
+newtype AppConfig =
   AppConfig { pgConn :: Connection
             }
 
@@ -55,7 +57,7 @@ makeConnection = do
 makeAppConfig :: IO AppConfig
 makeAppConfig = do
   pg <- makeConnection
-  pure $ AppConfig {pgConn = pg}
+  pure AppConfig {pgConn = pg}
 
 newtype AppHandler a =
   AppHandler {runAppHandler :: ReaderT AppConfig (ExceptT ServantErr IO) a}

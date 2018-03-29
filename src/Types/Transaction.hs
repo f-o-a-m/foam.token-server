@@ -2,16 +2,16 @@
 
 module Types.Transaction where
 
-import Composite (Record, (:->))
-import Composite.Aeson (DefaultJsonFormat(defaultJsonFormat))
-import Composite.Aeson.TH (makeRecordJsonWrapper)
-import Composite.Opaleye (defaultRecTable)
-import Composite.Swagger.TH (makeToSchema)
-import Composite.TH (withLensesAndProxies)
-import Control.Lens.TH (makeWrapped)
-import Data.Int (Int64)
-import Data.Text (Text)
-import Opaleye (Column, PGInt8, PGText, Table(..))
+import           Composite            ((:->), Record)
+import           Composite.Aeson      (DefaultJsonFormat (defaultJsonFormat))
+import           Composite.Aeson.TH   (makeRecordJsonWrapper)
+import           Composite.Opaleye    (defaultRecTable)
+import           Composite.Swagger.TH (makeToSchema)
+import           Composite.TH         (withLensesAndProxies)
+import           Control.Lens.TH      (makeWrapped)
+import           Data.Int             (Int64)
+import           Data.Text            (Text)
+import           Opaleye              (Column, PGInt8, PGText, Table (..))
 
 
 --------------------------------------------------------------------------------
