@@ -16,6 +16,9 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Lib
+                     , Api.Api
+                     , Api.Server
+                     , Types.Application
                      , Queries.Transfer
                      , Types.Orphans
                      , Types.Transaction
@@ -29,6 +32,7 @@ library
                      , http-api-data
                      , lens
                      , mtl
+                     , natural-transformation
                      , opaleye
                      , postgresql-simple
                      , servant-server
