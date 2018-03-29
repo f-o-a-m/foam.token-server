@@ -19,6 +19,7 @@ library
                      , Api.Server
                      , Types.Application
                      , Queries.Transfer
+                     , Queries.Transaction
                      , Types.Orphans
                      , Types.Transaction
                      , Types.Transfer

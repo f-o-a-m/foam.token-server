@@ -6,6 +6,7 @@ PGUSER ?= "postgres"
 PGPASSWORD ?= "password"
 PGDATABASE ?= "token_db"
 NODE_URL ?= "http://geth-rinkeby-deploy.foam.svc.cluster.local:8545"
+TOKEN_ADDRESS ?=
 
 
 
@@ -39,4 +40,15 @@ token-server: stack
 	PGDATABASE=$(PGDATABASE) \
 	PGPASSWORD=$(PGPASSWORD) \
 	NODE_URL=$(NODE_URL) \
+	token-server
+
+token-indexer: stack
+	PGHOST=$(PGHOST) \
+	PGPORT=$(PGPORT) \
+	PGUSER=$(PGUSER) \
+	PGDATABASE=$(PGDATABASE) \
+	PGPASSWORD=$(PGPASSWORD) \
+	NODE_URL=$(NODE_URL) \
+	TOKEN_ADDRESS=$(TOKEN_ADDRESS) \
+  STARTING_BLOCK=$(STARTING_BLOCK) \
 	token-server
