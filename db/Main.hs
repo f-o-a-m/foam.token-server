@@ -19,11 +19,11 @@ createTransactionsTable conn = execute_ conn q
   where
     q = [sql|
             CREATE TABLE transactions (
-              id SERIAL8 PRIMARY KEY UNIQUE,
-              transactionHash varchar not null,
-              blockNumber integer not null,
-              from varchar not null,
-              to varchar not null
+              "id" serial PRIMARY KEY UNIQUE,
+              "transactionHash" text not null,
+              "blockNumber" integer not null,
+              "from" text not null,
+              "to" text not null
             );
         |]
 
@@ -32,10 +32,10 @@ createTransfersTable conn = execute_ conn q
   where
     q = [sql|
             CREATE TABLE transfers (
-              id SERIAL8 PRIMARY KEY UNIQUE,
-              transactionHash varchar not null,
-              from varchar not null,
-              to varchar not null,
-              value integer not null
+              "id" serial PRIMARY KEY UNIQUE,
+              "transactionHash" text not null,
+              "from" text not null,
+              "to" text not null,
+              "value" integer not null
             );
         |]
