@@ -6,10 +6,17 @@ packages:
     git: https://github.com/f-o-a-m/hs-web3
     commit: 17d204a9668eac66936a695459088bdaafd28f18
   extra-dep: true
+- location:
+    git: https://github.com/ConferHealth/composite
+    commit: 93c1e14c5f1d36a728631e5ffe0807abafeb80df
+  subdirs:
+    - composite-aeson
+    - composite-base
+    - composite-opaleye
+    - composite-swagger
+  extra-dep: true
 
 extra-deps:
- - composite-base-0.5.3.0
- - composite-opaleye-0.5.3.0
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

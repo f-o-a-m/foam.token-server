@@ -16,11 +16,15 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Lib
-                     , Types
+                     , Types.Transaction
+                     , Types.Transfer
   build-depends:       base >= 4.7 && < 5
                      , aeson
+                     , composite-aeson
                      , composite-base
                      , composite-opaleye
+                     , composite-swagger
+                     , lens
                      , opaleye
                      , servant-server
                      , text
@@ -31,6 +35,8 @@ library
                      , TypeOperators
                      , TypeFamilies
                      , FlexibleContexts
+                     , FlexibleInstances
+                     , MultiParamTypeClasses
 
 executable token-server-exe
   hs-source-dirs:      app
