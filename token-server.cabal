@@ -36,11 +36,14 @@ library
                      , opaleye
                      , postgresql-simple
                      , servant-server
+                     , servant-swagger
+                     , string-conversions
                      , swagger2
                      , text
                      , vinyl
                      , wai
                      , warp
+                     , web3
   default-language:    Haskell2010
   default-extensions:  DataKinds
                      , TypeOperators
