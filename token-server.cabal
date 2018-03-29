@@ -16,6 +16,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Lib
+                     , Types.Orphans
                      , Types.Transaction
                      , Types.Transfer
   build-depends:       base >= 4.7 && < 5
@@ -24,9 +25,11 @@ library
                      , composite-base
                      , composite-opaleye
                      , composite-swagger
+                     , http-api-data
                      , lens
                      , opaleye
                      , servant-server
+                     , swagger2
                      , text
                      , wai
                      , warp
@@ -37,6 +40,9 @@ library
                      , FlexibleContexts
                      , FlexibleInstances
                      , MultiParamTypeClasses
+                     , StandaloneDeriving
+                     , GeneralizedNewtypeDeriving
+                     , ScopedTypeVariables
 
 executable token-server-exe
   hs-source-dirs:      app
