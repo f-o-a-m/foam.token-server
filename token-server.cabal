@@ -16,6 +16,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Lib
+                     , Queries.Transfer
                      , Types.Orphans
                      , Types.Transaction
                      , Types.Transfer
@@ -27,10 +28,13 @@ library
                      , composite-swagger
                      , http-api-data
                      , lens
+                     , mtl
                      , opaleye
+                     , postgresql-simple
                      , servant-server
                      , swagger2
                      , text
+                     , vinyl
                      , wai
                      , warp
   default-language:    Haskell2010
@@ -43,6 +47,7 @@ library
                      , StandaloneDeriving
                      , GeneralizedNewtypeDeriving
                      , ScopedTypeVariables
+                     , Arrows
 
 executable token-server-exe
   hs-source-dirs:      app

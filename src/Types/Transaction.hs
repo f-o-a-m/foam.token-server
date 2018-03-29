@@ -9,6 +9,7 @@ import Composite.Opaleye (defaultRecTable)
 import Composite.Swagger.TH (makeToSchema)
 import Composite.TH (withLensesAndProxies)
 import Control.Lens.TH (makeWrapped)
+import Data.Int (Int64)
 import Data.Text (Text)
 import Opaleye (Column, PGInt8, PGText, Table(..))
 
@@ -20,7 +21,7 @@ import Opaleye (Column, PGInt8, PGText, Table(..))
 withLensesAndProxies [d|
   type FTxHash      = "transactionHash" :-> Text
   type CTxHash      = "transactionHash" :-> Column PGText
-  type FBlockNumber = "blockNumber"     :-> Integer
+  type FBlockNumber = "blockNumber"     :-> Int64
   type CBlockNumber = "blockNumber"     :-> Column PGInt8
   type FFrom        = "from"            :-> Text
   type CFrom        = "from"            :-> Column PGText
@@ -29,7 +30,7 @@ withLensesAndProxies [d|
   |]
 
 type ApiTransaction = '[FTxHash, FFrom, FTo, FBlockNumber]
-type DBTransaction = '[FTxHash, CFrom, CTo, CBlockNumber]
+type DBTransaction = '[FTxHash, FFrom, FTo, FBlockNumber]
 type DBTransactionCols = '[CTxHash, CFrom, CTo, CBlockNumber]
 
 transactionTable :: Table (Record DBTransactionCols) (Record DBTransactionCols)
