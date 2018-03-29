@@ -16,12 +16,21 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Lib
+                     , Types
   build-depends:       base >= 4.7 && < 5
                      , aeson
+                     , composite-base
+                     , composite-opaleye
+                     , opaleye
                      , servant-server
+                     , text
                      , wai
                      , warp
   default-language:    Haskell2010
+  default-extensions:  DataKinds
+                     , TypeOperators
+                     , TypeFamilies
+                     , FlexibleContexts
 
 executable token-server-exe
   hs-source-dirs:      app
