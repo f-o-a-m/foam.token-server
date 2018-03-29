@@ -41,6 +41,7 @@ library
                      , text
                      , vinyl
                      , wai
+                     , wai-extra
                      , warp
                      , web3
   default-language:    Haskell2010

@@ -11,11 +11,11 @@ type GetTransfersByTransactionHash =
   :> Capture "transaction_hash" Transaction.FTxHash
   :> Get '[JSON] [Transfer.ApiTransferJson]
 
-type GetTransfers =
-     "transfers"
+type GetTransfersBySender =
+     "transfers_by_sender"
+  :> Capture "sender" Transfer.FFrom
   :> QueryParam "start" Transaction.FBlockNumber
   :> QueryParam "end" Transaction.FBlockNumber
-  :> QueryParam "sender" Transfer.FFrom
   :> Get '[JSON] [Transfer.ApiTransferByBlockJson]
 
 type GetSwagger =
@@ -24,7 +24,7 @@ type GetSwagger =
 
 type TokenApi =
        GetTransfersByTransactionHash
-  :<|> GetTransfers
+  :<|> GetTransfersBySender
 
 tokenApi :: Proxy TokenApi
 tokenApi = Proxy

@@ -30,13 +30,13 @@ getTransfersByHash (Val txHash) = do
   pure $ map (view (rsubset . _Unwrapping Transfer.ApiTransferJson)) transfers
 
 -- | Get all transfers from a `sender`.
-getTransfersBySender
+getTransfers
   :: ( MonadReader AppConfig m
      , MonadIO m
      )
   =>  Transfer.FFrom
   -> m [Transfer.ApiTransferJson]
-getTransfersBySender (Val sender) = do
+getTransfers (Val sender) = do
   conn <- pgConn <$> ask
   (transfers :: [Record Transfer.DBTransfer]) <- liftIO . runQuery conn $ proc () -> do
     transfer <- queryTable Transfer.transferTable -< ()
@@ -49,11 +49,11 @@ getTransfersInRange
   :: ( MonadReader AppConfig m
      , MonadIO m
      )
-  => Transaction.FBlockNumber
+  => Maybe Transfer.FFrom
   -> Transaction.FBlockNumber
-  -> Maybe Transfer.FFrom
+  -> Transaction.FBlockNumber
   -> m [Transfer.ApiTransferByBlockJson]
-getTransfersInRange (Val start) (Val end) mFrom = do
+getTransfersInRange mFrom (Val start) (Val end) = do
     conn <- pgConn <$> ask
     let baseQuery = transfersByBlockQuery start end
         query = maybe baseQuery (filterBySender baseQuery) mFrom
