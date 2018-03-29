@@ -12,7 +12,7 @@ import Control.Lens.TH (makeWrapped)
 import Data.Int (Int64)
 import Data.Text (Text)
 import Opaleye (Column, PGInt8, PGText, Table(..))
-import Types.Transaction (FTxHash, CTxHash)
+import Types.Transaction (FTxHash, CTxHash, FBlockNumber, CBlockNumber)
 
 --------------------------------------------------------------------------------
 -- | Token Transfers
@@ -27,14 +27,22 @@ withLensesAndProxies [d|
   type CValue = "value" :-> Column PGInt8
   |]
 
+transferTable :: Table (Record DBTransferCols) (Record DBTransferCols)
+transferTable = Table "transfers" defaultRecTable
 
+-- | Basic Transfer
 type ApiTransfer = '[FTxHash, FFrom, FTo, FValue]
 type DBTransfer = '[FTxHash, FFrom, FTo, FValue]
 type DBTransferCols = '[CTxHash, CFrom, CTo, CValue]
 
-transferTable :: Table (Record DBTransferCols) (Record DBTransferCols)
-transferTable = Table "transfers" defaultRecTable
-
 makeRecordJsonWrapper "ApiTransferJson" ''ApiTransfer
 makeWrapped ''ApiTransferJson
 makeToSchema "ApiTransferJson" ''ApiTransferJson
+
+-- | Transfer By Block
+type ApiTransferByBlock = '[FBlockNumber, FTxHash, FFrom, FTo, FValue]
+
+makeRecordJsonWrapper "ApiTransferByBlockJson" ''ApiTransferByBlock
+makeWrapped ''ApiTransferByBlockJson
+makeToSchema "ApiTransferByBlockJson" ''ApiTransferByBlockJson
+
