@@ -44,11 +44,11 @@ data AppConfig =
 makeConnection :: IO Connection
 makeConnection = do
   connInfo <- do
-      host <- getEnv "PG_HOST"
-      port <- read <$> getEnv "PG_PORT"
-      user <- getEnv "PG_USER"
-      pw <- getEnv "PG_PASSWORD"
-      db <- getEnv "PG_DB"
+      host <- getEnv "PGHOST"
+      port <- read <$> getEnv "PGPORT"
+      user <- getEnv "PGUSER"
+      pw <- getEnv "PGPASSWORD"
+      db <- getEnv "PGDATABASE"
       pure $ ConnectInfo host port user pw db
   connect connInfo
 
