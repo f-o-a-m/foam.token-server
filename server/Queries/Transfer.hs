@@ -60,7 +60,6 @@ getTransfersInRange mFrom (Val start) (Val end) = do
     (transfers :: [(Int64, Record Transfer.DBTransfer)]) <- liftIO . runQuery conn $ query
     let makeTransferWithBlock (bn, transfer) = (bn :*: transfer) ^. _Unwrapping Transfer.ApiTransferByBlockJson
     pure $ map makeTransferWithBlock transfers
-  where
 
 transfersByBlockQuery
   :: Int64
