@@ -6,7 +6,7 @@ import Composite.Record
 import Control.Monad.Reader (ask)
 import Database.PostgreSQL.Simple (Connection)
 import Data.Int (Int64)
-import Data.String (fromString)
+import Data.Text (pack)
 import Queries.Transaction (mostRecentTransactionBlockQuery)
 import Types.Application (HttpProvider, makeConnection)
 import Types.Transaction as Transaction
@@ -14,27 +14,34 @@ import Types.Transfer as Transfer
 import Network.Ethereum.Web3
 import Network.Ethereum.Web3.Types
 import Network.Ethereum.Web3.Encoding.Int (unUIntN)
-import Network.Ethereum.Web3.Address (toText)
+import Network.Ethereum.Web3.Address (toText, fromText)
 import Network.Ethereum.Web3.TH
 import Opaleye (constant, runInsertMany, runQuery, count, aggregate)
 import System.Environment (lookupEnv, getEnv)
+import Data.Binary (encode)
+
 
 [abiFrom|abis/ERC20.json|]
 
 main :: IO ()
 main = do
   conn <- makeConnection
-  address <- fromString <$> getEnv "TOKEN_ADDRESS"
-  start <- getStartingBlock conn
-  void $ runWeb3 $ eventLoop conn address start
+  eaddress <- fromText . pack <$> getEnv "TOKEN_ADDRESS"
+  case eaddress of
+    Left err -> error err
+    Right address -> do
+      start <- getStartingBlock conn
+      void $ runWeb3 $ eventLoop conn address start
 
 getStartingBlock
   :: Connection
   -> IO BlockNumber
 getStartingBlock conn = do
-  mstart <- fmap read <$> lookupEnv "STARTING_BLOCK"
+  mstart <- lookupEnv "STARTING_BLOCK"
   case mstart of
-    Just bn -> return bn
+    Just bn -> do
+      print bn
+      return . BlockNumber $ read bn
     Nothing -> do
       print "No Specified Starting Block"
       mLastBlock <- getLastProcessedBlock conn
@@ -67,7 +74,7 @@ eventLoop conn addr start =  do
     let (BlockNumber bn) = changeBlockNumber change
         txHash = changeTransactionHash change
         logAddress = toText . changeAddress $ change
-        value = fromInteger . unUIntN $ transferValue_
+        value = encode . fromInteger @Int64 . unUIntN $ transferValue_
         (transaction :: Record Transaction.DBTransaction) =  txHash :*: logAddress :*: fromInteger bn :*: RNil
         (transfer :: Record Transfer.DBTransfer) =  txHash :*: toText transferTo_ :*: toText transferFrom_ :*: value :*: RNil
     _ <- liftIO $ runInsertMany conn Transaction.transactionTable [constant transaction]

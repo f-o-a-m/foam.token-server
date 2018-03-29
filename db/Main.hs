@@ -35,6 +35,6 @@ createTransfersTable conn = execute_ conn q
               "transactionHash" text not null,
               "from" text not null,
               "to" text not null,
-              "value" integer not null
+              "value" bytea not null
             );
         |]

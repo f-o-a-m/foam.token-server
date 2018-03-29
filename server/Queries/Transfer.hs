@@ -3,9 +3,10 @@ module Queries.Transfer where
 import Types.Application (AppConfig(..))
 import Composite.Record
 import Control.Arrow (returnA)
-import Control.Lens (view, _Unwrapping, (^.), _1, _2)
+import Control.Lens (view, _Unwrapping, (^.), (%~), (#), _1, _2, over, to)
 import Control.Monad.IO.Class (MonadIO(..))
 import Control.Monad.Reader (MonadReader, ask)
+import Data.Binary (decode)
 import Data.Int (Int64)
 import Data.Maybe (fromMaybe)
 import Database.PostgreSQL.Simple (Connection)
@@ -27,7 +28,8 @@ getTransfersByHash (Val txHash) = do
     transfer <- queryTable Transfer.transferTable -< ()
     restrict -< transfer ^. Transaction.cTxHash .== constant txHash
     returnA -< transfer
-  pure $ map (view (rsubset . _Unwrapping Transfer.ApiTransferJson)) transfers
+  pure $ flip map transfers $ \transfer ->
+    transfer ^. to Transfer.transferDBToApi . _Unwrapping Transfer.ApiTransferJson
 
 -- | Get all transfers from a `sender`.
 getTransfers
@@ -42,7 +44,8 @@ getTransfers (Val sender) = do
     transfer <- queryTable Transfer.transferTable -< ()
     restrict -< transfer ^. Transfer.cFrom .== constant sender
     returnA -< transfer
-  pure $ map (view (rsubset . _Unwrapping Transfer.ApiTransferJson)) transfers
+  pure $ flip map transfers $ \transfer ->
+    transfer ^. to Transfer.transferDBToApi . _Unwrapping Transfer.ApiTransferJson
 
 -- | Get all transfers in a block range
 getTransfersInRange
@@ -58,7 +61,9 @@ getTransfersInRange mFrom (Val start) (Val end) = do
     let baseQuery = transfersByBlockQuery start end
         query = maybe baseQuery (filterBySender baseQuery) mFrom
     (transfers :: [(Int64, Record Transfer.DBTransfer)]) <- liftIO . runQuery conn $ query
-    let makeTransferWithBlock (bn, transfer) = (bn :*: transfer) ^. _Unwrapping Transfer.ApiTransferByBlockJson
+    let makeTransferWithBlock = \(bn, transfer) ->
+          let transfer' = over Transfer.iValue decode transfer
+          in (bn :*: Transfer.transferDBToApi transfer) ^. _Unwrapping Transfer.ApiTransferByBlockJson
     pure $ map makeTransferWithBlock transfers
 
 transfersByBlockQuery
@@ -70,7 +75,7 @@ transfersByBlockQuery start end = orderBy (desc fst) $ proc () -> do
   tx <- queryTable Transaction.transactionTable -< ()
   restrict -< transfer ^. Transaction.cTxHash .== tx ^. Transaction.cTxHash
   restrict -< tx ^. Transaction.cBlockNumber .>= constant start .&& tx ^. Transaction.cBlockNumber .<= constant end
-  returnA -< (tx ^. Transaction.cBlockNumber , transfer)
+  returnA -< (tx ^. Transaction.cBlockNumber, transfer)
 
 filterBySender
   :: Query (a, Record Transfer.DBTransferCols)

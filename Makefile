@@ -6,6 +6,8 @@ PGUSER ?= "postgres"
 PGPASSWORD ?= "password"
 PGDATABASE ?= "token_db"
 NODE_URL ?= "http://parity-proxy.foam.svc.cluster.local:8645"
+
+# This is the OmiseGo ERC20 contract address.
 TOKEN_ADDRESS ?= "0xd26114cd6ee289accf82350c8d8487fedb8a0c07"
 
 
@@ -56,4 +58,4 @@ token-indexer: stack
 	NODE_URL=$(NODE_URL) \
 	TOKEN_ADDRESS=$(TOKEN_ADDRESS) \
   STARTING_BLOCK=$(STARTING_BLOCK) \
-	token-server
+	token-indexer
