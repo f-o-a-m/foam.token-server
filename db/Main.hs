@@ -22,8 +22,7 @@ createTransactionsTable conn = execute_ conn q
               "id" serial PRIMARY KEY UNIQUE,
               "transactionHash" text not null,
               "blockNumber" integer not null,
-              "from" text not null,
-              "to" text not null
+              "address" text not null
             );
         |]
 

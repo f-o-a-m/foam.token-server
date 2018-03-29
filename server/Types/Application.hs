@@ -1,6 +1,7 @@
 module Types.Application
   ( AppHandler
   , AppConfig(..)
+  , HttpProvider
   , makeAppConfig
   , transformAppHandler
   , web3Request

@@ -23,15 +23,13 @@ withLensesAndProxies [d|
   type CTxHash      = "transactionHash" :-> Column PGText
   type FBlockNumber = "blockNumber"     :-> Int64
   type CBlockNumber = "blockNumber"     :-> Column PGInt8
-  type FFrom        = "from"            :-> Text
-  type CFrom        = "from"            :-> Column PGText
-  type FTo          = "to"              :-> Text
-  type CTo          = "to"              :-> Column PGText
+  type FAddress     = "address"         :-> Text
+  type CAddress     = "address"         :-> Column PGText
   |]
 
-type ApiTransaction = '[FTxHash, FFrom, FTo, FBlockNumber]
-type DBTransaction = '[FTxHash, FFrom, FTo, FBlockNumber]
-type DBTransactionCols = '[CTxHash, CFrom, CTo, CBlockNumber]
+type ApiTransaction = '[FTxHash, FAddress, FBlockNumber]
+type DBTransaction = '[FTxHash, FAddress, FBlockNumber]
+type DBTransactionCols = '[CTxHash, CAddress, CBlockNumber]
 
 transactionTable :: Table (Record DBTransactionCols) (Record DBTransactionCols)
 transactionTable = Table "transactions" defaultRecTable
