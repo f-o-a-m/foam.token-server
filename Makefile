@@ -4,7 +4,7 @@ PGHOST ?= "localhost"
 PGPORT ?= "5432"
 PGUSER ?= "postgres"
 PGPASSWORD ?= "password"
-PGDATABASE ?= "foam_db"
+PGDATABASE ?= "token_db"
 
 all:
 	stack
@@ -20,6 +20,14 @@ hlint:
 stylish:
 	find ./src -name "*.hs" | xargs stylish-haskell -c ./.stylish_haskell.yaml -i
 	find ./app -name "*.hs" | xargs stylish-haskell -c ./.stylish_haskell.yaml -i
+
+create-token-db: stack
+	PGHOST=$(PGHOST) \
+	PGPORT=$(PGPORT) \
+	PGUSER=$(PGUSER) \
+	PGDATABASE=$(PGDATABASE) \
+	PGPASSWORD=$(PGPASSWORD) \
+	create-token-db
 
 token-server: stack
 	PGHOST=$(PGHOST) \

@@ -4,6 +4,7 @@ module Types.Application
   , makeAppConfig
   , transformAppHandler
   , web3Request
+  , makeConnection
   ) where
 
 import           Control.Monad.Except           (ExceptT, MonadError)
