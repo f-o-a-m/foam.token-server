@@ -42,7 +42,26 @@ getTransfersBySender
 getTransfersBySender sender mStart mEnd = do
     let start = fromMaybe (Val 0) mStart
     end <- maybe (Val . fromInteger <$> getBlockNumber) pure mEnd
-    getTransfersInRange (Just sender) start end
+    getTransfersFromInRange sender start end
+  where
+    getBlockNumber :: AppHandler Integer
+    getBlockNumber = do
+      ebn <- liftIO $ web3Request Eth.blockNumber
+      case ebn of
+        Left err -> throwError $ err500 {errBody = cs $ show err}
+        Right (BlockNumber res) -> pure res
+
+-- | Get all transfers from a certain sender, with the option to specify the range
+-- | to within a certain block interval including the endpoints
+getTransfersByReceiver
+  :: Transfer.FTo
+  -> Maybe Transaction.FBlockNumber
+  -> Maybe Transaction.FBlockNumber
+  -> AppHandler [Transfer.ApiTransferByBlockJson]
+getTransfersByReceiver receiver mStart mEnd = do
+    let start = fromMaybe (Val 0) mStart
+    end <- maybe (Val . fromInteger <$> getBlockNumber) pure mEnd
+    getTransfersToInRange receiver start end
   where
     getBlockNumber :: AppHandler Integer
     getBlockNumber = do
@@ -59,7 +78,7 @@ getBalancesBatch addrs = do
   case evalidatedAdders of
     Left err -> throwError err500 {errBody = cs $ show err}
     Right validatedAdders -> do
-      balances <- liftIO $ getBalances  validatedAdders
+      balances <- getBalances  validatedAdders
       return . flip map balances $ \(a,b) ->
         (toText a :*: fromInteger b :*: RNil) ^. _Unwrapping Transfer.ApiBalanceInfoJson
 
@@ -68,6 +87,7 @@ tokenServer :: ServerT TokenApi AppHandler
 tokenServer =
        getTransfersByTransactionHash
   :<|> getTransfersBySender
+  :<|> getTransfersByReceiver
   :<|> getBalancesBatch
 
 -- | Swagger

@@ -5,8 +5,8 @@ module Queries.Balance
 import Data.String (fromString)
 import qualified Control.Exception as Exception
 import Control.Concurrent.Async
-import Control.Monad.IO.Class (MonadIO)
-import Control.Monad.Reader (MonadReader, runReaderT)
+import Control.Monad.IO.Class (MonadIO, liftIO)
+import Control.Monad.Reader (MonadReader, runReaderT, ask)
 import Network.Ethereum.Web3.Address
 import Network.Ethereum.Web3.Types
 import Network.Ethereum.Web3.Encoding.Int
@@ -15,17 +15,24 @@ import qualified Contracts.ERC20 as ERC20
 import Data.Hashable (Hashable(..))
 import Data.Typeable
 import Haxl.Core
-import Types.Application (AppConfig, web3Request, makeConnection)
+import Types.Application (AppConfig(..), web3Request)
 import System.Environment (getEnv)
 import Data.Default (def)
 import Data.Text (pack)
 
-getBalances :: [Address] -> IO [(Address, Integer)]
+getBalances
+  :: ( MonadReader AppConfig m
+     , MonadIO m
+     )
+  => [Address]
+  -> m [(Address, Integer)]
 getBalances addrs = do
-  st <- initGlobalState
-  env <- initEnv (stateSet st stateEmpty) ()
-  balances <- runHaxl env $ mapM getBalanceOf addrs
-  return $ zipWith (\a b -> (a, unUIntN b)) addrs balances
+  cfg <- ask
+  let st = EthState {appConfig = cfg}
+  liftIO $ do
+    env <- initEnv (stateSet st stateEmpty) ()
+    balances <- runHaxl env $ mapM getBalanceOf addrs
+    return $ zipWith (\a b -> (a, unUIntN b)) addrs balances
 
 -- | Request Algebra
 data EthReq a where
@@ -43,17 +50,7 @@ instance Hashable (EthReq a) where
 
 -- | The only global state is the ERC20 address
 instance StateKey EthReq where
-  data State EthReq = EthState { erc20Address :: Address
-                               , pgConnection :: Connection
-                               }
-
-initGlobalState :: IO (State EthReq)
-initGlobalState = do
-  addr <- getEnv "TOKEN_ADDRESS"
-  conn <- makeConnection
-  return EthState { erc20Address = fromString addr
-                  , pgConnection = conn
-                  }
+  data State EthReq = EthState {appConfig :: AppConfig}
 
 instance ShowP EthReq where showp = show
 
@@ -88,13 +85,13 @@ fetchEthReq
   -> EthReq a
   -> IO a
 fetchEthReq EthState{..} (BalanceOf user) = do
-  let txOpts = def {callTo = erc20Address}
+  let txOpts = def {callTo = erc20Address appConfig}
   eRes <- web3Request $ ERC20.balanceOf txOpts user
   case eRes of
     Left err -> Exception.throw (error (show err) :: Exception.SomeException)
     Right res -> pure res
 fetchEthReq EthState{..} (ExchangedWith user) =
-  runReaderT (getExchangePartners user) pgConnection
+  runReaderT (getExchangePartners user) (pgConn appConfig)
 
 -- Postgres Queries
 

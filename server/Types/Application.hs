@@ -8,6 +8,7 @@ module Types.Application
   , makeConnection
   ) where
 
+import Data.String (fromString)
 import           Control.Monad.Except           (ExceptT, MonadError)
 import           Control.Monad.IO.Class         (MonadIO (..))
 import           Control.Monad.Reader           (MonadReader, ReaderT,
@@ -15,6 +16,7 @@ import           Control.Monad.Reader           (MonadReader, ReaderT,
 import           Control.Natural                (wrapNT)
 import           Database.PostgreSQL.Simple     (ConnectInfo (..), Connection,
                                                  connect)
+import           Network.Ethereum.Web3.Address
 import           Network.Ethereum.Web3.Provider
 import           Network.Ethereum.Web3.Types    (Web3, Web3Error)
 import           Servant                        (ServantErr)
@@ -41,8 +43,9 @@ web3Request
 web3Request = runWeb3
 
 -- | App Config
-newtype AppConfig =
+data AppConfig =
   AppConfig { pgConn :: Connection
+            , erc20Address :: Address
             }
 
 makeConnection :: IO Connection
@@ -59,7 +62,10 @@ makeConnection = do
 makeAppConfig :: IO AppConfig
 makeAppConfig = do
   pg <- makeConnection
-  pure AppConfig {pgConn = pg}
+  addr <- fromString <$> getEnv "TOKEN_ADDRESS"
+  pure AppConfig { pgConn = pg
+                 , erc20Address = addr
+                 }
 
 newtype AppHandler a =
   AppHandler {runAppHandler :: ReaderT AppConfig (ExceptT ServantErr IO) a}

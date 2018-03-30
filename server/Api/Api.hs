@@ -19,6 +19,13 @@ type GetTransfersBySender =
   :> QueryParam "end" Transaction.FBlockNumber
   :> Get '[JSON] [Transfer.ApiTransferByBlockJson]
 
+type GetTransfersByReceiver =
+     "transfers_by_sender"
+  :> Capture "receiver" Transfer.FTo
+  :> QueryParam "start" Transaction.FBlockNumber
+  :> QueryParam "end" Transaction.FBlockNumber
+  :> Get '[JSON] [Transfer.ApiTransferByBlockJson]
+
 type GetBalances =
      "balances"
   :> QueryParams "address" Text
@@ -31,6 +38,7 @@ type GetSwagger =
 type TokenApi =
        GetTransfersByTransactionHash
   :<|> GetTransfersBySender
+  :<|> GetTransfersByReceiver
   :<|> GetBalances
 
 tokenApi :: Proxy TokenApi
