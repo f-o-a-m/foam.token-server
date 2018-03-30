@@ -27,10 +27,10 @@ withLensesAndProxies [d|
   type CFrom  = "from"  :-> Column PGText
   type FTo    = "to"    :-> Text
   type CTo    = "to"    :-> Column PGText
-  type FValue = "value" :-> Int64
+  type FValue = "value" :-> Integer
   type IValue = "value" :-> ByteString
   type CValue = "value" :-> Column PGBytea
-  type FAddress    = "address" :-> Text
+  type FAddress = "address" :-> Text
   |]
 
 transferTable :: Table (Record DBTransferCols) (Record DBTransferCols)

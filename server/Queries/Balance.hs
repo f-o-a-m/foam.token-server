@@ -3,6 +3,7 @@ module Queries.Balance
   , getRichestHolders
   ) where
 
+import Data.Ord (Down(..))
 import Control.Monad (join)
 import Data.String (fromString)
 import qualified Control.Exception as Exception
@@ -24,6 +25,7 @@ import Data.Default (def)
 import Data.Text (pack)
 import qualified Haxl.Prelude as HP
 import Data.Int (Int64)
+import Control.Arrow
 import qualified Data.List as L
 
 
@@ -55,9 +57,9 @@ getRichestHolders n = do
       env <- initEnv (stateSet st stateEmpty) ()
       pairs <- runHaxl env $ HP.forM startEnds $ \(start, end) -> do
         receivers <- getReceiversInBlockRange start end
-        balances <- HP.mapM getBalanceOf receivers
+        balances <- HP.mapM getBalanceOf $ receivers
         return $ zipWith (\a b -> (a, unUIntN b)) receivers balances
-      return $ take n $ L.sortOn snd $ join pairs
+      return . take n . L.sortOn (Down . snd) . L.nub . join $ pairs
 
 -- | Request Algebra
 data EthReq a where
