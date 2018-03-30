@@ -44,6 +44,7 @@ token-server: stack
 	PGUSER=$(PGUSER) \
 	PGDATABASE=$(PGDATABASE) \
 	PGPASSWORD=$(PGPASSWORD) \
+	TOKEN_ADDRESS=$(TOKEN_ADDRESS) \
 	NODE_URL=$(NODE_URL) \
 	token-server
 

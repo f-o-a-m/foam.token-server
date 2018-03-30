@@ -68,7 +68,7 @@ tokenServer :: ServerT TokenApi AppHandler
 tokenServer =
        getTransfersByTransactionHash
   :<|> getTransfersBySender
-  :<|> undefined
+  :<|> getBalancesBatch
 
 -- | Swagger
 getSwagger :: Swagger
