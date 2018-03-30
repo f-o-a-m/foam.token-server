@@ -8,15 +8,15 @@ import           Composite.Aeson.TH   (makeRecordJsonWrapper)
 import           Composite.Opaleye    (defaultRecTable)
 import           Composite.Swagger.TH (makeToSchema)
 import           Composite.TH         (withLensesAndProxies)
-import           Control.Lens         ((^.), to)
+import           Control.Lens         (to, (^.))
 import           Control.Lens.TH      (makeWrapped)
+import           Data.Binary          (decode)
+import           Data.ByteString.Lazy (ByteString)
 import           Data.Int             (Int64)
 import           Data.Text            (Text)
 import           Opaleye              (Column, PGBytea, PGText, Table (..))
 import           Types.Transaction    (CBlockNumber, CTxHash, FBlockNumber,
                                        FTxHash, fTxHash)
-import           Data.ByteString.Lazy (ByteString)
-import Data.Binary (decode)
 
 --------------------------------------------------------------------------------
 -- | Token Transfers

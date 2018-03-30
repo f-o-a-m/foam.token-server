@@ -43,8 +43,8 @@ instance StateKey EthReq where
 initGlobalState :: IO (State EthReq)
 initGlobalState = do
   addr <- getEnv "TOKEN_ADDRESS"
-  return $ EthState { erc20Address = fromString addr
-                    }
+  return EthState { erc20Address = fromString addr
+                  }
 
 instance ShowP EthReq where showp = show
 

@@ -38,7 +38,7 @@ httpProvider = unsafePerformIO $ do
 web3Request
   :: Web3 HttpProvider a
   -> IO (Either Web3Error a)
-web3Request action = runWeb3 action
+web3Request = runWeb3
 
 -- | App Config
 newtype AppConfig =

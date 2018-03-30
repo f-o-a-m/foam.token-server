@@ -55,7 +55,7 @@ getLastProcessedBlock
 getLastProcessedBlock conn = do
   (bns :: [Int64]) <- runQuery conn mostRecentTransactionBlockQuery
   case bns of
-    [] -> return $ Nothing
+    [] -> return Nothing
     [bn] -> return $ Just bn
     _ -> error "Impossible Query -- got multiple most recent blocks."
 
