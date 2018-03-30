@@ -5,6 +5,12 @@ This repo is meant as a sandbox for ideas in other backend applications. We are 
 1. graph-ql like queries between using both the blockchain and postgres as a single datasource
 2. records as a way to separate the types used by the database from the rest of the API
 
+## Requirements
+See the Makefile for required environment variables
+1. postgres database
+2. access to a synced main-net node where you have permission to install filters
+3. an ERC20 address (the default is the OmiseGo token address)
+
 ## Implementation
 This project consists of two smaller executables
 
