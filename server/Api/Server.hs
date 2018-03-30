@@ -4,18 +4,23 @@ import Api.Api
 import Data.Swagger (Swagger)
 import Servant.Swagger (toSwagger)
 import Composite.Record
+import Control.Lens (_Unwrapping, (^.))
 import Control.Monad.Except (throwError)
+import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (ask)
 import Data.Maybe (fromMaybe)
 import Data.String.Conversions (cs)
+import Data.Text (Text)
 import Servant
 import Servant.Server
 import Types.Orphans ()
+import Network.Ethereum.Web3.Address
 import Network.Ethereum.Web3.Types
 import Network.Wai.Handler.Warp (run)
 import Network.Wai.Middleware.RequestLogger (logStdoutDev)
 import qualified Network.Ethereum.Web3.Eth as Eth
 import Queries.Transfer
+import Queries.Balance
 import qualified Types.Transfer as Transfer
 import qualified Types.Transaction as Transaction
 import Types.Application
@@ -41,16 +46,29 @@ getTransfersBySender sender mStart mEnd = do
   where
     getBlockNumber :: AppHandler Integer
     getBlockNumber = do
-      ebn <- web3Request Eth.blockNumber
+      ebn <- liftIO $ web3Request Eth.blockNumber
       case ebn of
         Left err -> throwError $ err500 {errBody = cs $ show err}
         Right (BlockNumber res) -> pure res
+
+getBalancesBatch
+  :: [Text]
+  -> AppHandler [Transfer.ApiBalanceInfoJson]
+getBalancesBatch addrs = do
+  let evalidatedAdders = mapM fromText addrs
+  case evalidatedAdders of
+    Left err -> throwError err500 {errBody = cs $ show err}
+    Right validatedAdders -> do
+      balances <- liftIO $ getBalances  validatedAdders
+      return . flip map balances $ \(a,b) ->
+        (toText a :*: fromInteger b :*: RNil) ^. _Unwrapping Transfer.ApiBalanceInfoJson
 
 -- | Token server
 tokenServer :: ServerT TokenApi AppHandler
 tokenServer =
        getTransfersByTransactionHash
   :<|> getTransfersBySender
+  :<|> undefined
 
 -- | Swagger
 getSwagger :: Swagger

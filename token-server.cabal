@@ -17,7 +17,9 @@ library
   hs-source-dirs:      server
   exposed-modules:     Api.Api
                      , Api.Server
+                     , Contracts.ERC20
                      , Types.Application
+                     , Queries.Balance
                      , Queries.Transfer
                      , Queries.Transaction
                      , Types.Orphans
@@ -25,12 +27,16 @@ library
                      , Types.Transfer
   build-depends:       base >= 4.7 && < 5
                      , aeson
+                     , async
                      , binary
                      , bytestring
                      , composite-aeson
                      , composite-base
                      , composite-opaleye
                      , composite-swagger
+                     , data-default
+                     , hashable
+                     , haxl
                      , http-api-data
                      , lens
                      , mtl
@@ -58,6 +64,10 @@ library
                      , GeneralizedNewtypeDeriving
                      , ScopedTypeVariables
                      , Arrows
+                     , GADTs
+                     , OverloadedStrings
+                     , DeriveGeneric
+                     , RecordWildCards
 
 executable token-server
   hs-source-dirs:      app

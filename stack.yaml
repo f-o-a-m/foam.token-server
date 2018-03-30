@@ -16,8 +16,18 @@ packages:
     - composite-swagger
   extra-dep: true
 
+- location:
+    git: https://github.com/ElvishJerricco/fraxl
+    commit: fcc46282df2bf67b30a4098d47ef5c81eb28d2d8
+  extra-dep: true
+
 extra-deps:
  - sized-0.3.0.0
  - equational-reasoning-0.5.1.0
  - ghc-typelits-presburger-0.2.0.0
  - type-natural-0.8.0.0
+
+allow-newer: true
+
+
+

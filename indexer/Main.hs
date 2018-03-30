@@ -19,9 +19,7 @@ import Network.Ethereum.Web3.TH
 import Opaleye (constant, runInsertMany, runQuery, count, aggregate)
 import System.Environment (lookupEnv, getEnv)
 import Data.Binary (encode)
-
-
-[abiFrom|abis/ERC20.json|]
+import qualified Contracts.ERC20 as ERC20
 
 main :: IO ()
 main = do
@@ -67,8 +65,8 @@ eventLoop
   -> BlockNumber
   -> Web3 HttpProvider ()
 eventLoop conn addr start =  do
-  let fltr = (eventFilter addr :: Filter Transfer) {filterFromBlock = BlockWithNumber start}
-  void $ eventMany' fltr 50 $ \t@Transfer{..} -> do
+  let fltr = (eventFilter addr :: Filter ERC20.Transfer) {filterFromBlock = BlockWithNumber start}
+  void $ eventMany' fltr 50 $ \t@ERC20.Transfer{..} -> do
     change <- ask
     liftIO . print $ "Got Transfer : " ++ show t
     let (BlockNumber bn) = changeBlockNumber change

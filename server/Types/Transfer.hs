@@ -30,6 +30,7 @@ withLensesAndProxies [d|
   type FValue = "value" :-> Int64
   type IValue = "value" :-> ByteString
   type CValue = "value" :-> Column PGBytea
+  type FAddress = "address" :-> Text
   |]
 
 transferTable :: Table (Record DBTransferCols) (Record DBTransferCols)
@@ -58,4 +59,11 @@ type ApiTransferByBlock = '[FBlockNumber, FTxHash, FFrom, FTo, FValue]
 makeRecordJsonWrapper "ApiTransferByBlockJson" ''ApiTransferByBlock
 makeWrapped ''ApiTransferByBlockJson
 makeToSchema "ApiTransferByBlockJson" ''ApiTransferByBlockJson
+
+-- | Balance
+type ApiBalanceInfo = '[FAddress, FValue]
+
+makeRecordJsonWrapper "ApiBalanceInfoJson" ''ApiBalanceInfo
+makeWrapped ''ApiBalanceInfoJson
+makeToSchema "ApiBalanceInfoJson" ''ApiBalanceInfoJson
 
