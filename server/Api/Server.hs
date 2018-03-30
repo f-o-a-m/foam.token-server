@@ -82,6 +82,15 @@ getBalancesBatch addrs = do
       return . flip map balances $ \(a,b) ->
         (toText a :*: fromInteger b :*: RNil) ^. _Unwrapping Transfer.ApiBalanceInfoJson
 
+getRichestAccounts
+  :: Maybe Int
+  -> AppHandler [Transfer.ApiBalanceInfoJson]
+getRichestAccounts mn = do
+  let n = fromMaybe 10 mn
+  holders <- getRichestHolders n
+  return . flip map holders $ \(a,b) ->
+    (toText a :*: fromInteger b :*: RNil) ^. _Unwrapping Transfer.ApiBalanceInfoJson
+
 -- | Token server
 tokenServer :: ServerT TokenApi AppHandler
 tokenServer =
@@ -89,6 +98,7 @@ tokenServer =
   :<|> getTransfersBySender
   :<|> getTransfersByReceiver
   :<|> getBalancesBatch
+  :<|> getRichestAccounts
 
 -- | Swagger
 getSwagger :: Swagger

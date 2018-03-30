@@ -31,6 +31,12 @@ type GetBalances =
   :> QueryParams "address" Text
   :> Get '[JSON] [Transfer.ApiBalanceInfoJson]
 
+type GetRichestAccounts =
+     "balances"
+  :> "richest"
+  :> QueryParam "n" Int
+  :> Get '[JSON] [Transfer.ApiBalanceInfoJson]
+
 type GetSwagger =
      "swagger"
   :> Get '[JSON] Swagger
@@ -40,6 +46,7 @@ type TokenApi =
   :<|> GetTransfersBySender
   :<|> GetTransfersByReceiver
   :<|> GetBalances
+  :<|> GetRichestAccounts
 
 tokenApi :: Proxy TokenApi
 tokenApi = Proxy

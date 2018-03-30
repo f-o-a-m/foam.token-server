@@ -1,7 +1,9 @@
 module Queries.Balance
   ( getBalances
+  , getRichestHolders
   ) where
 
+import Control.Monad (join)
 import Data.String (fromString)
 import qualified Control.Exception as Exception
 import Control.Concurrent.Async
@@ -16,9 +18,14 @@ import Data.Hashable (Hashable(..))
 import Data.Typeable
 import Haxl.Core
 import Types.Application (AppConfig(..), web3Request)
+import Queries.Transfer (allReceiversInRange, partitionBlockRange)
 import System.Environment (getEnv)
 import Data.Default (def)
 import Data.Text (pack)
+import qualified Haxl.Prelude as HP
+import Data.Int (Int64)
+import qualified Data.List as L
+
 
 getBalances
   :: ( MonadReader AppConfig m
@@ -31,13 +38,31 @@ getBalances addrs = do
   let st = EthState {appConfig = cfg}
   liftIO $ do
     env <- initEnv (stateSet st stateEmpty) ()
-    balances <- runHaxl env $ mapM getBalanceOf addrs
+    balances <- runHaxl env $ HP.mapM getBalanceOf addrs
     return $ zipWith (\a b -> (a, unUIntN b)) addrs balances
+
+getRichestHolders
+  :: ( MonadReader AppConfig m
+     , MonadIO m
+     )
+  => Int
+  -> m [(Address, Integer)]
+getRichestHolders n = do
+    startEnds <- partitionBlockRange 50
+    cfg <- ask
+    let st = EthState {appConfig = cfg}
+    liftIO $ do
+      env <- initEnv (stateSet st stateEmpty) ()
+      pairs <- runHaxl env $ HP.forM startEnds $ \(start, end) -> do
+        receivers <- getReceiversInBlockRange start end
+        balances <- HP.mapM getBalanceOf receivers
+        return $ zipWith (\a b -> (a, unUIntN b)) receivers balances
+      return $ take n $ L.sortOn snd $ join pairs
 
 -- | Request Algebra
 data EthReq a where
   BalanceOf :: Address -> EthReq (UIntN 256)
-  ExchangedWith :: Address -> EthReq [Address]
+  GetReceivers :: Int64 -> Int64 -> EthReq [(Address, Integer)]
   deriving (Typeable)
 
 -- | Boilerplate
@@ -46,7 +71,7 @@ deriving instance Show (EthReq a)
 
 instance Hashable (EthReq a) where
    hashWithSalt s (BalanceOf a) = hashWithSalt s (0::Int, toText a)
-   hashWithSalt s (ExchangedWith a) = hashWithSalt s (1::Int, toText a)
+   hashWithSalt s (GetReceivers start end) = hashWithSalt s (1::Int, start, end)
 
 -- | The only global state is the ERC20 address
 instance StateKey EthReq where
@@ -59,13 +84,16 @@ instance DataSourceName EthReq where
 
 instance DataSource u EthReq where
   fetch _state _flags _user bfs = AsyncFetch $ \inner -> do
-    asyncs <- mapM (fetchAsync _state) bfs
+    asyncs <- HP.mapM (fetchAsync _state) bfs
     inner
     mapM_ wait asyncs
 
 -- Queries
 getBalanceOf :: Address -> GenHaxl u (UIntN 256)
 getBalanceOf addr = dataFetch (BalanceOf addr)
+
+getReceiversInBlockRange :: Int64 -> Int64 -> GenHaxl u [Address]
+getReceiversInBlockRange start end = map fst <$> dataFetch (GetReceivers start end)
 
 -- Helpers
 
@@ -90,16 +118,5 @@ fetchEthReq EthState{..} (BalanceOf user) = do
   case eRes of
     Left err -> Exception.throw (error (show err) :: Exception.SomeException)
     Right res -> pure res
-fetchEthReq EthState{..} (ExchangedWith user) =
-  runReaderT (getExchangePartners user) (pgConn appConfig)
-
--- Postgres Queries
-
-getExchangePartners
-  :: ( MonadReader Connection m
-     , MonadIO m
-     )
-  => Address
-  -- ^ address
-  -> m [Address]
-getExchangePartners = undefined
+fetchEthReq EthState{..} (GetReceivers start end) =
+  runReaderT (allReceiversInRange start end) appConfig

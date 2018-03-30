@@ -10,11 +10,15 @@ import Data.Binary (decode)
 import Data.Int (Int64)
 import Data.Maybe (fromMaybe)
 import Database.PostgreSQL.Simple (Connection)
+import Network.Ethereum.Web3.Address
 import Data.Vinyl.Lens (rsubset)
-import Opaleye (Query, Column, PGInt8, (.==), (.<=), (.>=), (.&&), runQuery, queryTable, restrict, constant, orderBy, desc)
+import Opaleye as O (Query, Column, PGInt8, PGText, (.==), (.<=), (.>=), (.&&), runQuery, queryTable, restrict, constant, orderBy, desc, distinct, min, max, aggregate)
 import qualified Types.Transfer as Transfer
 import qualified Types.Transaction as Transaction
 import Data.Text (Text)
+import Data.ByteString.Lazy (ByteString)
+import Data.Traversable (forM)
+import qualified Data.List as L
 
 -- | Get all transfers by transaction hash -- possibly more than one exists
 getTransfersByHash
@@ -81,6 +85,56 @@ transfersByBlockQuery start end = orderBy (desc fst) $ proc () -> do
   restrict -< transfer ^. Transaction.cTxHash .== tx ^. Transaction.cTxHash
   restrict -< tx ^. Transaction.cBlockNumber .>= constant start .&& tx ^. Transaction.cBlockNumber .<= constant end
   returnA -< (tx ^. Transaction.cBlockNumber, transfer)
+
+-- | get the address of anyone who received tokens in a given block range
+allReceiversInRange
+  :: ( MonadReader AppConfig m
+     , MonadIO m
+     )
+  => Int64
+  -> Int64
+  -> m [(Address, Integer)]
+allReceiversInRange start end = do
+  conn <- pgConn <$> ask
+  (receivers :: [(Text, ByteString)]) <- liftIO $ runQuery conn $ distinct $ proc () -> do
+    (_, transfer) <- transfersByBlockQuery start end -< ()
+    returnA -< (transfer ^. Transfer.cTo, transfer ^. Transfer.cValue)
+  return $ case forM receivers $ \(r, v) -> fromText r >>= \r' -> return (r', decode v) of
+    Left err -> error err
+    Right res -> res
+
+getBlockRange
+  :: ( MonadReader AppConfig m
+     , MonadIO m
+     )
+  => m (Int64, Int64)
+getBlockRange = do
+  conn <- pgConn <$> ask
+  [mn :: Int64] <- liftIO $ runQuery conn $ aggregate O.min $ proc () -> do
+    tx <- queryTable Transaction.transactionTable -< ()
+    returnA -< tx ^. Transaction.cBlockNumber
+  [mx :: Int64] <- liftIO $ runQuery conn $ aggregate O.max $ proc () -> do
+    tx <- queryTable Transaction.transactionTable -< ()
+    returnA -< tx ^. Transaction.cBlockNumber
+  return (mn, mx)
+
+partitionBlockRange
+  :: ( MonadReader AppConfig m
+     , MonadIO m
+     )
+  => Int
+  -> m [(Int64, Int64)]
+partitionBlockRange n = do
+    (mn,mx) <- getBlockRange
+    let blocks = [mn .. mx]
+    return $ makeStartEnds blocks
+  where
+    makeStartEnds :: [Int64] -> [(Int64, Int64)]
+    makeStartEnds l = makeStartEnds' l []
+      where
+        makeStartEnds' l accum = case splitAt n l of
+          ([],_) -> accum
+          (as,rest) -> makeStartEnds' rest ((L.minimum as, L.maximum as) : accum)
 
 -- Filters
 
