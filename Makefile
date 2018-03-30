@@ -35,7 +35,7 @@ create-token-db: stack
 	PGUSER=$(PGUSER) \
 	PGDATABASE=$(PGDATABASE) \
 	PGPASSWORD=$(PGPASSWORD) \
-	create-tok5432en-db
+	create-token-db
 
 token-server: stack
 	PGHOST=$(PGHOST) \
