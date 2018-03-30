@@ -3,16 +3,19 @@ module Queries.Balance
   ) where
 
 import Data.String (fromString)
-import Control.Exception (SomeException)
+import qualified Control.Exception as Exception
 import Control.Concurrent.Async
+import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.Reader (MonadReader, runReaderT)
 import Network.Ethereum.Web3.Address
 import Network.Ethereum.Web3.Types
 import Network.Ethereum.Web3.Encoding.Int
+import Database.PostgreSQL.Simple (Connection)
 import qualified Contracts.ERC20 as ERC20
 import Data.Hashable (Hashable(..))
 import Data.Typeable
 import Haxl.Core
-import Types.Application (web3Request)
+import Types.Application (AppConfig, web3Request, makeConnection)
 import System.Environment (getEnv)
 import Data.Default (def)
 import Data.Text (pack)
@@ -27,6 +30,7 @@ getBalances addrs = do
 -- | Request Algebra
 data EthReq a where
   BalanceOf :: Address -> EthReq (UIntN 256)
+  ExchangedWith :: Address -> EthReq [Address]
   deriving (Typeable)
 
 -- | Boilerplate
@@ -35,15 +39,20 @@ deriving instance Show (EthReq a)
 
 instance Hashable (EthReq a) where
    hashWithSalt s (BalanceOf a) = hashWithSalt s (0::Int, toText a)
+   hashWithSalt s (ExchangedWith a) = hashWithSalt s (1::Int, toText a)
 
 -- | The only global state is the ERC20 address
 instance StateKey EthReq where
-  data State EthReq = EthState {erc20Address :: Address}
+  data State EthReq = EthState { erc20Address :: Address
+                               , pgConnection :: Connection
+                               }
 
 initGlobalState :: IO (State EthReq)
 initGlobalState = do
   addr <- getEnv "TOKEN_ADDRESS"
+  conn <- makeConnection
   return EthState { erc20Address = fromString addr
+                  , pgConnection = conn
                   }
 
 instance ShowP EthReq where showp = show
@@ -69,15 +78,31 @@ fetchAsync
   -> IO (Async ())
 fetchAsync _state (BlockedFetch req rvar) =
   async $ do
-    e <- fetchEthReq _state req
+    e <- Exception.try $ fetchEthReq _state req
     case e of
-      Left ex -> putFailure rvar (error (show ex) :: SomeException)
+      Left ex -> putFailure rvar (ex :: Exception.SomeException)
       Right a -> putSuccess rvar a
 
 fetchEthReq
   :: State EthReq
   -> EthReq a
-  -> IO (Either Web3Error a)
+  -> IO a
 fetchEthReq EthState{..} (BalanceOf user) = do
   let txOpts = def {callTo = erc20Address}
-  web3Request $ ERC20.balanceOf txOpts user
+  eRes <- web3Request $ ERC20.balanceOf txOpts user
+  case eRes of
+    Left err -> Exception.throw (error (show err) :: Exception.SomeException)
+    Right res -> pure res
+fetchEthReq EthState{..} (ExchangedWith user) =
+  runReaderT (getExchangePartners user) pgConnection
+
+-- Postgres Queries
+
+getExchangePartners
+  :: ( MonadReader Connection m
+     , MonadIO m
+     )
+  => Address
+  -- ^ address
+  -> m [Address]
+getExchangePartners = undefined

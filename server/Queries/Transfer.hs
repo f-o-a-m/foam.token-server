@@ -14,6 +14,7 @@ import Data.Vinyl.Lens (rsubset)
 import Opaleye (Query, Column, PGInt8, (.==), (.<=), (.>=), (.&&), runQuery, queryTable, restrict, constant, orderBy, desc)
 import qualified Types.Transfer as Transfer
 import qualified Types.Transaction as Transaction
+import Data.Text (Text)
 
 -- | Get all transfers by transaction hash -- possibly more than one exists
 getTransfersByHash
