@@ -7,12 +7,10 @@ import Composite.Record
 import Control.Lens (_Unwrapping, (^.))
 import Control.Monad.Except (throwError)
 import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Reader (ask)
 import Data.Maybe (fromMaybe)
 import Data.String.Conversions (cs)
 import Data.Text (Text)
 import Servant
-import Servant.Server
 import Types.Orphans ()
 import Network.Ethereum.Web3.Address
 import Network.Ethereum.Web3.Types

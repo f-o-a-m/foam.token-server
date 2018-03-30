@@ -68,6 +68,7 @@ library
                      , OverloadedStrings
                      , DeriveGeneric
                      , RecordWildCards
+  ghc-options: -Werror, -Wall
 
 executable token-server
   hs-source-dirs:      app

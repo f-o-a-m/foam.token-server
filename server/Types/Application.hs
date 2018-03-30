@@ -8,12 +8,12 @@ module Types.Application
   , makeConnection
   ) where
 
-import Data.String (fromString)
 import           Control.Monad.Except           (ExceptT, MonadError)
 import           Control.Monad.IO.Class         (MonadIO (..))
 import           Control.Monad.Reader           (MonadReader, ReaderT,
                                                  runReaderT)
 import           Control.Natural                (wrapNT)
+import           Data.String                    (fromString)
 import           Database.PostgreSQL.Simple     (ConnectInfo (..), Connection,
                                                  connect)
 import           Network.Ethereum.Web3.Address
@@ -44,7 +44,7 @@ web3Request = runWeb3
 
 -- | App Config
 data AppConfig =
-  AppConfig { pgConn :: Connection
+  AppConfig { pgConn       :: Connection
             , erc20Address :: Address
             }
 

@@ -2,7 +2,6 @@
 module Types.Orphans where
 
 import           Composite.Record ((:->) (Val))
-import           Data.Int         (Int64)
 import           Data.Proxy       (Proxy (Proxy))
 import           Data.Swagger     (ToParamSchema, toParamSchema)
 import           Web.HttpApiData  (FromHttpApiData, ToHttpApiData)

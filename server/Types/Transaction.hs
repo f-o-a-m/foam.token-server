@@ -3,7 +3,6 @@
 module Types.Transaction where
 
 import           Composite            ((:->), Record)
-import           Composite.Aeson      (DefaultJsonFormat (defaultJsonFormat))
 import           Composite.Aeson.TH   (makeRecordJsonWrapper)
 import           Composite.Opaleye    (defaultRecTable)
 import           Composite.Swagger.TH (makeToSchema)

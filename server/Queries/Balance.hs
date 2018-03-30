@@ -57,7 +57,7 @@ getRichestHolders n = do
       env <- initEnv (stateSet st stateEmpty) ()
       pairs <- runHaxl env $ HP.forM startEnds $ \(start, end) -> do
         receivers <- getReceiversInBlockRange start end
-        balances <- HP.mapM getBalanceOf $ receivers
+        balances <- HP.mapM getBalanceOf receivers
         return $ zipWith (\a b -> (a, unUIntN b)) receivers balances
       return . take n . L.sortOn (Down . snd) . L.nub . join $ pairs
 

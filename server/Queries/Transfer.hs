@@ -3,16 +3,13 @@ module Queries.Transfer where
 import Types.Application (AppConfig(..))
 import Composite.Record
 import Control.Arrow (returnA)
-import Control.Lens (view, _Unwrapping, (^.), (%~), (#), _1, _2, over, to)
+import Control.Lens (_Unwrapping, (^.), to)
 import Control.Monad.IO.Class (MonadIO(..))
 import Control.Monad.Reader (MonadReader, ask)
 import Data.Binary (decode)
 import Data.Int (Int64)
-import Data.Maybe (fromMaybe)
-import Database.PostgreSQL.Simple (Connection)
 import Network.Ethereum.Web3.Address
-import Data.Vinyl.Lens (rsubset)
-import Opaleye as O (Query, Column, PGInt8, PGText, (.==), (.<=), (.>=), (.&&), runQuery, queryTable, restrict, constant, orderBy, desc, distinct, min, max, aggregate)
+import Opaleye as O (Query, Column, PGInt8, (.==), (.<=), (.>=), (.&&), runQuery, queryTable, restrict, constant, orderBy, desc, distinct, min, max, aggregate)
 import qualified Types.Transfer as Transfer
 import qualified Types.Transaction as Transaction
 import Data.Text (Text)
@@ -51,8 +48,7 @@ getTransfersFromInRange mFrom (Val start) (Val end) = do
         query =  transfersByBlockQ `filterJoinBySender` mFrom
     (transfers :: [(Int64, Record Transfer.DBTransfer)]) <- liftIO . runQuery conn $ query
     let makeTransferWithBlock = \(bn, transfer) ->
-          let transfer' = over Transfer.iValue decode transfer
-          in (bn :*: Transfer.transferDBToApi transfer) ^. _Unwrapping Transfer.ApiTransferByBlockJson
+          (bn :*: Transfer.transferDBToApi transfer) ^. _Unwrapping Transfer.ApiTransferByBlockJson
     pure $ map makeTransferWithBlock transfers
 
 -- | Get all transfers in a block range based on a `to` account.
@@ -64,14 +60,13 @@ getTransfersToInRange
   -> Transaction.FBlockNumber
   -> Transaction.FBlockNumber
   -> m [Transfer.ApiTransferByBlockJson]
-getTransfersToInRange to (Val start) (Val end) = do
+getTransfersToInRange receiver (Val start) (Val end) = do
     conn <- pgConn <$> ask
     let transfersByBlockQ = transfersByBlockQuery start end
-        query = transfersByBlockQ `filterJoinByReceiver` to
+        query = transfersByBlockQ `filterJoinByReceiver` receiver
     (transfers :: [(Int64, Record Transfer.DBTransfer)]) <- liftIO . runQuery conn $ query
     let makeTransferWithBlock = \(bn, transfer) ->
-          let transfer' = over Transfer.iValue decode transfer
-          in (bn :*: Transfer.transferDBToApi transfer) ^. _Unwrapping Transfer.ApiTransferByBlockJson
+          (bn :*: Transfer.transferDBToApi transfer) ^. _Unwrapping Transfer.ApiTransferByBlockJson
     pure $ map makeTransferWithBlock transfers
 
 -- | Get all the transfers in a certain block range
@@ -132,9 +127,9 @@ partitionBlockRange n = do
     makeStartEnds :: [Int64] -> [(Int64, Int64)]
     makeStartEnds l = makeStartEnds' l []
       where
-        makeStartEnds' l accum = case splitAt n l of
+        makeStartEnds' as accum = case splitAt n as of
           ([],_) -> accum
-          (as,rest) -> makeStartEnds' rest ((L.minimum as, L.maximum as) : accum)
+          (bs,rest) -> makeStartEnds' rest ((L.minimum bs, L.maximum bs) : accum)
 
 -- Filters
 
@@ -153,9 +148,9 @@ filterByReceiver
   :: Query (Record Transfer.DBTransferCols)
   -> Transfer.FTo
   -> Query (Record Transfer.DBTransferCols)
-filterByReceiver query (Val to) = proc () -> do
+filterByReceiver query (Val receiver) = proc () -> do
   transfer <- query -< ()
-  restrict -< transfer ^. Transfer.cTo .== constant to
+  restrict -< transfer ^. Transfer.cTo .== constant receiver
   returnA -< transfer
 
 -- | filter a join on transfers by `from` field
@@ -164,7 +159,7 @@ filterJoinBySender
   -> Transfer.FFrom
   -> Query (a, Record Transfer.DBTransferCols)
 filterJoinBySender query (Val sender) = proc () -> do
-  res@(a, transfer) <- query -< ()
+  res@(_, transfer) <- query -< ()
   restrict -< transfer ^. Transfer.cFrom .== constant sender
   returnA -< res
 
@@ -173,7 +168,7 @@ filterJoinByReceiver
   :: Query (a, Record Transfer.DBTransferCols)
   -> Transfer.FTo
   -> Query (a, Record Transfer.DBTransferCols)
-filterJoinByReceiver query (Val to) = proc () -> do
-  res@(a, transfer) <- query -< ()
-  restrict -< transfer ^. Transfer.cTo .== constant to
+filterJoinByReceiver query (Val receiver) = proc () -> do
+  res@(_, transfer) <- query -< ()
+  restrict -< transfer ^. Transfer.cTo .== constant receiver
   returnA -< res
