@@ -5,7 +5,6 @@ PGPORT ?= "5432"
 PGUSER ?= "postgres"
 PGPASSWORD ?= "password"
 PGDATABASE ?= "token_db"
-NODE_URL ?= "http://parity-proxy.foam.svc.cluster.local:8645"
 
 # This is the OmiseGo ERC20 main-net contract address.
 TOKEN_ADDRESS ?= "0xd26114cd6ee289accf82350c8d8487fedb8a0c07"
