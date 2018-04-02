@@ -11,6 +11,32 @@ See the Makefile for required environment variables
 2. access to a synced main-net node where you have permission to install filters
 3. an ERC20 address (the default is the OmiseGo token address)
 
+## How To Run
+first you want to start a postrgres instance and create the token_db
+
+```bash
+> create database token_db;
+```
+
+run the initial migration to setup the database
+```bash
+> make create-token-db
+```
+
+populate the database with all relevant events from a given block number
+```bash
+> STARTING_BLOCK=5340979 NODE_URL=<YOUR_NODE> make token-indexer
+```
+
+This is a process which will sync the database then continue to monitor events. It should be able to resume
+from it's last known check in if you decide to turn it off and on.
+
+finally, run the server
+```bash
+make token-server
+```
+
+
 ## Implementation
 This project consists of two smaller executables
 
