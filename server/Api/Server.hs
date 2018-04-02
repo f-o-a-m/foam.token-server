@@ -15,6 +15,7 @@ import Types.Orphans ()
 import Network.Ethereum.Web3.Address
 import Network.Ethereum.Web3.Types
 import Network.Wai.Handler.Warp (run)
+import Network.Wai.Middleware.Cors
 import Network.Wai.Middleware.RequestLogger (logStdoutDev)
 import qualified Network.Ethereum.Web3.Eth as Eth
 import Queries.Transfer
@@ -110,4 +111,4 @@ startServer = do
   let server = pure getSwagger :<|> enter (transformAppHandler cfg) tokenServer
   run 9000 $
     logStdoutDev $
-    serve api server
+    simpleCors (serve api server)
