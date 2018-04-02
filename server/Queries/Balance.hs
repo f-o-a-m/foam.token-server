@@ -5,7 +5,6 @@ module Queries.Balance
 
 import Data.Ord (Down(..))
 import Control.Monad (join)
-import Data.String (fromString)
 import qualified Control.Exception as Exception
 import Control.Concurrent.Async
 import Control.Monad.IO.Class (MonadIO, liftIO)
@@ -13,19 +12,15 @@ import Control.Monad.Reader (MonadReader, runReaderT, ask)
 import Network.Ethereum.Web3.Address
 import Network.Ethereum.Web3.Types
 import Network.Ethereum.Web3.Encoding.Int
-import Database.PostgreSQL.Simple (Connection)
 import qualified Contracts.ERC20 as ERC20
 import Data.Hashable (Hashable(..))
 import Data.Typeable
 import Haxl.Core
 import Types.Application (AppConfig(..), web3Request)
 import Queries.Transfer (allReceiversInRange, partitionBlockRange)
-import System.Environment (getEnv)
 import Data.Default (def)
-import Data.Text (pack)
 import qualified Haxl.Prelude as HP
 import Data.Int (Int64)
-import Control.Arrow
 import qualified Data.List as L
 
 
@@ -39,8 +34,8 @@ getBalances addrs = do
   cfg <- ask
   let st = EthState {appConfig = cfg}
   liftIO $ do
-    env <- initEnv (stateSet st stateEmpty) ()
-    balances <- runHaxl env $ HP.mapM getBalanceOf addrs
+    e <- initEnv (stateSet st stateEmpty) ()
+    balances <- runHaxl e $ HP.mapM getBalanceOf addrs
     return $ zipWith (\a b -> (a, unUIntN b)) addrs balances
 
 getRichestHolders
@@ -54,8 +49,8 @@ getRichestHolders n = do
     cfg <- ask
     let st = EthState {appConfig = cfg}
     liftIO $ do
-      env <- initEnv (stateSet st stateEmpty) ()
-      pairs <- runHaxl env $ HP.forM startEnds $ \(start, end) -> do
+      e <- initEnv (stateSet st stateEmpty) ()
+      pairs <- runHaxl e $ HP.forM startEnds $ \(start, end) -> do
         receivers <- getReceiversInBlockRange start end
         balances <- HP.mapM getBalanceOf receivers
         return $ zipWith (\a b -> (a, unUIntN b)) receivers balances

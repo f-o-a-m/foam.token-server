@@ -43,6 +43,7 @@ library
                      , natural-transformation
                      , opaleye
                      , postgresql-simple
+                     , product-profunctors
                      , servant-server
                      , servant-swagger
                      , string-conversions

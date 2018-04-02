@@ -3,7 +3,7 @@ module Queries.Transfer where
 import Types.Application (AppConfig(..))
 import Composite.Record
 import Control.Arrow (returnA)
-import Control.Lens (_Unwrapping, (^.), to)
+import Control.Lens (_Unwrapping, (^.))
 import Control.Monad.IO.Class (MonadIO(..))
 import Control.Monad.Reader (MonadReader, ask)
 import Data.Binary (decode)
@@ -31,7 +31,7 @@ getTransfersByHash (Val txHash) = do
     restrict -< transfer ^. Transaction.cTxHash .== constant txHash
     returnA -< transfer
   pure $ flip map transfers $ \transfer ->
-    transfer ^. to Transfer.transferDBToApi . _Unwrapping Transfer.ApiTransferJson
+    transfer ^. _Unwrapping Transfer.ApiTransferJson
 
 -- | Get all transfers in a block range based on a `from` account.
 getTransfersFromInRange
@@ -48,7 +48,7 @@ getTransfersFromInRange mFrom (Val start) (Val end) = do
         query =  transfersByBlockQ `filterJoinBySender` mFrom
     (transfers :: [(Int64, Record Transfer.DBTransfer)]) <- liftIO . runQuery conn $ query
     let makeTransferWithBlock = \(bn, transfer) ->
-          (bn :*: Transfer.transferDBToApi transfer) ^. _Unwrapping Transfer.ApiTransferByBlockJson
+          (bn :*: transfer) ^. _Unwrapping Transfer.ApiTransferByBlockJson
     pure $ map makeTransferWithBlock transfers
 
 -- | Get all transfers in a block range based on a `to` account.
@@ -66,7 +66,7 @@ getTransfersToInRange receiver (Val start) (Val end) = do
         query = transfersByBlockQ `filterJoinByReceiver` receiver
     (transfers :: [(Int64, Record Transfer.DBTransfer)]) <- liftIO . runQuery conn $ query
     let makeTransferWithBlock = \(bn, transfer) ->
-          (bn :*: Transfer.transferDBToApi transfer) ^. _Unwrapping Transfer.ApiTransferByBlockJson
+          (bn :*: transfer) ^. _Unwrapping Transfer.ApiTransferByBlockJson
     pure $ map makeTransferWithBlock transfers
 
 -- | Get all the transfers in a certain block range

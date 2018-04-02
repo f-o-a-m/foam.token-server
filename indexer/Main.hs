@@ -72,7 +72,7 @@ eventLoop conn addr start =  do
     let (BlockNumber bn) = changeBlockNumber change
         txHash = changeTransactionHash change
         logAddress = toText . changeAddress $ change
-        value = encode @Integer . unUIntN $ transferValue_
+        value = Transfer.Value . unUIntN $ transferValue_
         (transaction :: Record Transaction.DBTransaction) =  txHash :*: logAddress :*: fromInteger bn :*: RNil
         (transfer :: Record Transfer.DBTransfer) =  txHash :*: toText transferTo_ :*: toText transferFrom_ :*: value :*: RNil
     _ <- liftIO $ runInsertMany conn Transaction.transactionTable [constant transaction]
