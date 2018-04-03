@@ -1,4 +1,4 @@
-resolver: lts-9.13
+resolver: lts-11.2
 
 packages:
 - .
@@ -7,18 +7,17 @@ packages:
     commit: 814fd555f128efac8855843cd52f4848deae739c
   extra-dep: true
 - location:
-    git: https://github.com/ConferHealth/composite
-    commit: 93c1e14c5f1d36a728631e5ffe0807abafeb80df
+    git: https://github.com/blinky3713/composite
+    commit: ae46b52f0ea6f963a89aa1b2e3aa051a58adebfd
   subdirs:
     - composite-aeson
     - composite-base
     - composite-opaleye
     - composite-swagger
   extra-dep: true
-
 - location:
-    git: https://github.com/ElvishJerricco/fraxl
-    commit: fcc46282df2bf67b30a4098d47ef5c81eb28d2d8
+    git: https://github.com/blinky3713/haskell-opaleye
+    commit: e1c79ab13e232f892b0211c4f055464712f0b0f5
   extra-dep: true
 
 extra-deps:
