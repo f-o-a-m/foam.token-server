@@ -13,17 +13,18 @@ import           Composite.Swagger.TH (makeToSchema)
 import           Composite.TH         (withLensesAndProxies)
 import           Control.Lens.TH      (makeWrapped)
 import           Data.Aeson           (ToJSON, FromJSON)
-import           Data.Binary          (encode, decode)
 import           Data.Text            (Text)
 import           Data.Swagger
-import           Opaleye              (Column, PGBytea, PGText, Table (..))
+import           Opaleye              (Column, PGNumeric, PGText, Table (..))
 import           Types.Transaction    (CTxHash, FBlockNumber,
                                        FTxHash)
+
 import Data.Proxy
 import Opaleye.Internal.RunQuery (QueryRunnerColumnDefault(..), fieldQueryRunnerColumn)
 import Opaleye.Constant (Constant(..), constant)
 import Data.Profunctor.Product.Default (Default(..))
 import GHC.Generics (Generic)
+import qualified Data.Scientific as Sci
 
 --------------------------------------------------------------------------------
 -- | Token Transfers
@@ -39,11 +40,11 @@ instance DefaultJsonFormat Value where
 instance ToSchema Value where
   declareNamedSchema _ = declareNamedSchema (Proxy @Integer)
 
-instance QueryRunnerColumnDefault PGBytea Value where
-  queryRunnerColumnDefault = Value . decode <$> fieldQueryRunnerColumn
+instance QueryRunnerColumnDefault PGNumeric Value where
+  queryRunnerColumnDefault = Value . truncate . toRational <$> fieldQueryRunnerColumn @Sci.Scientific
 
-instance Default Constant Value (Column PGBytea) where
-  def = Constant $ constant . encode . unValue
+instance Default Constant Value (Column PGNumeric) where
+  def = Constant $ constant @Sci.Scientific . fromInteger . unValue
 
 withLensesAndProxies [d|
   type FFrom  = "from"  :-> Text
@@ -51,7 +52,7 @@ withLensesAndProxies [d|
   type FTo    = "to"    :-> Text
   type CTo    = "to"    :-> Column PGText
   type FValue = "value" :-> Value
-  type CValue = "value" :-> Column PGBytea
+  type CValue = "value" :-> Column PGNumeric
   type FAddress = "address" :-> Text
   |]
 

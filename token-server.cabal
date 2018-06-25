@@ -44,6 +44,7 @@ library
                      , opaleye
                      , postgresql-simple
                      , product-profunctors
+                     , scientific
                      , servant-server
                      , servant-swagger
                      , string-conversions
@@ -69,6 +70,7 @@ library
                      , OverloadedStrings
                      , DeriveGeneric
                      , RecordWildCards
+                     , RankNTypes
   ghc-options: -Werror -Wall
 
 executable token-server
