@@ -1,5 +1,6 @@
 .PHONY: all clean hlint stylish
 
+export
 PGHOST ?= "localhost"
 PGPORT ?= "5432"
 PGUSER ?= "postgres"
@@ -9,51 +10,37 @@ PGDATABASE ?= "token_db"
 # This is the OmiseGo ERC20 main-net contract address.
 TOKEN_ADDRESS ?= "0xd26114cd6ee289accf82350c8d8487fedb8a0c07"
 
+help: ## Ask for help!
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
 all:
 	stack
 
-stack:
+stack: ## Build all haskell dependencies.
 	stack install
-clean:
+clean: ## Clean all haskell dependencies.
 	stack clean
 
-hlint:
+hlint: ## lint all haskell files according to the .hlint.yaml file.
 	hlint server "--ignore=Parse error" -XTypeApplications
 	hlint app "--ignore=Parse error" -XTypeApplications
 	hlint db "--ignore=Parse error" -XTypeApplications
 	hlint indexer "--ignore=Parse error" -XTypeApplications
 
-stylish:
+stylish: ## format all haskell files according to the .stylish-haskell.yaml file.
 	find ./server -name "*.hs" | xargs stylish-haskell -c ./.stylish_haskell.yaml -i
 	find ./app -name "*.hs" | xargs stylish-haskell -c ./.stylish_haskell.yaml -i
 	find ./db -name "*.hs" | xargs stylish-haskell -c ./.stylish_haskell.yaml -i
 	find ./indexer -name "*.hs" | xargs stylish-haskell -c ./.stylish_haskell.yaml -i
 
-create-token-db: stack
-	PGHOST=$(PGHOST) \
-	PGPORT=$(PGPORT) \
-	PGUSER=$(PGUSER) \
-	PGDATABASE=$(PGDATABASE) \
-	PGPASSWORD=$(PGPASSWORD) \
+create-token-db: stack ## run the postgres migrations.
 	create-token-db
 
-token-server: stack
-	PGHOST=$(PGHOST) \
-	PGPORT=$(PGPORT) \
-	PGUSER=$(PGUSER) \
-	PGDATABASE=$(PGDATABASE) \
-	PGPASSWORD=$(PGPASSWORD) \
-	TOKEN_ADDRESS=$(TOKEN_ADDRESS) \
+token-server: stack ## start the token server.
 	NODE_URL=$(NODE_URL) \
 	token-server
 
-token-indexer: stack
-	PGHOST=$(PGHOST) \
-	PGPORT=$(PGPORT) \
-	PGUSER=$(PGUSER) \
-	PGDATABASE=$(PGDATABASE) \
-	PGPASSWORD=$(PGPASSWORD) \
+token-indexer: stack ## start the token indexer.
 	NODE_URL=$(NODE_URL) \
-	TOKEN_ADDRESS=$(TOKEN_ADDRESS) \
-  STARTING_BLOCK=$(STARTING_BLOCK) \
+	STARTING_BLOCK=$(STARTING_BLOCK) \
 	token-indexer
