@@ -1,11 +1,12 @@
 .PHONY: all clean hlint stylish
 
 export
-PGHOST ?= "localhost"
-PGPORT ?= "5432"
-PGUSER ?= "postgres"
-PGPASSWORD ?= "password"
-PGDATABASE ?= "token_db"
+
+PGHOST ?= localhost
+PGPORT ?= 5432
+PGUSER ?= postgres
+PGPASSWORD ?= password
+PGDATABASE ?= token_db
 
 # This is the OmiseGo ERC20 main-net contract address.
 TOKEN_ADDRESS ?= "0xd26114cd6ee289accf82350c8d8487fedb8a0c07"
