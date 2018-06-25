@@ -41,7 +41,7 @@ getStartingBlock conn = do
       print bn
       return . BlockNumber $ read bn
     Nothing -> do
-      print "No Specified Starting Block"
+      print ("No Specified Starting Block" :: String)
       mLastBlock <- getLastProcessedBlock conn
       case mLastBlock of
         Nothing -> error "No Transfer Transactions found in database, you must specify a Starting Block"
@@ -74,7 +74,7 @@ eventLoop conn addr start =  do
         logAddress = toText . changeAddress $ change
         value = Transfer.Value . unUIntN $ transferValue_
         (transaction :: Record Transaction.DBTransaction) =  txHash :*: logAddress :*: fromInteger bn :*: RNil
-        (transfer :: Record Transfer.DBTransfer) =  txHash :*: toText transferTo_ :*: toText transferFrom_ :*: value :*: RNil
+        (transfer :: Record Transfer.DBTransfer) =  txHash :*: toText transferFrom_ :*: toText transferTo_ :*: value :*: RNil
     _ <- liftIO $ runInsertMany conn Transaction.transactionTable [constant transaction]
     _ <- liftIO $ runInsertMany conn Transfer.transferTable [constant transfer]
     return ContinueEvent

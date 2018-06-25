@@ -12,7 +12,6 @@ import           Control.Monad.Except           (ExceptT, MonadError)
 import           Control.Monad.IO.Class         (MonadIO (..))
 import           Control.Monad.Reader           (MonadReader, ReaderT,
                                                  runReaderT)
-import           Control.Natural                (wrapNT)
 import           Data.String                    (fromString)
 import           Database.PostgreSQL.Simple     (ConnectInfo (..), Connection,
                                                  connect)
@@ -20,7 +19,7 @@ import           Network.Ethereum.Web3.Address
 import           Network.Ethereum.Web3.Provider
 import           Network.Ethereum.Web3.Types    (Web3, Web3Error)
 import           Servant                        (ServantErr)
-import           Servant.Server                 ((:~>) (..), Handler (..))
+import           Servant.Server                 (Handler (..))
 import           System.Environment             (getEnv)
 import           System.IO.Unsafe               (unsafePerformIO)
 
@@ -73,5 +72,5 @@ newtype AppHandler a =
 
 transformAppHandler
   :: AppConfig
-  -> AppHandler :~> Handler
-transformAppHandler cfg = wrapNT $ Handler . flip runReaderT cfg . runAppHandler
+  -> (forall a. AppHandler a -> Handler a)
+transformAppHandler cfg = Handler . flip runReaderT cfg . runAppHandler
