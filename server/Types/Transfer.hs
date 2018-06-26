@@ -21,8 +21,6 @@ import           Types.Transaction    (CTxHash, FBlockNumber,
 
 import Data.Proxy
 import Opaleye.Internal.RunQuery (QueryRunnerColumnDefault(..), fieldQueryRunnerColumn)
-import Opaleye.Constant (Constant(..), constant)
-import Data.Profunctor.Product.Default (Default(..))
 import GHC.Generics (Generic)
 import qualified Data.Scientific as Sci
 
@@ -42,9 +40,6 @@ instance ToSchema Value where
 
 instance QueryRunnerColumnDefault PGNumeric Value where
   queryRunnerColumnDefault = Value . truncate . toRational <$> fieldQueryRunnerColumn @Sci.Scientific
-
-instance Default Constant Value (Column PGNumeric) where
-  def = Constant $ constant @Sci.Scientific . fromInteger . unValue
 
 withLensesAndProxies [d|
   type FFrom  = "from"  :-> Text

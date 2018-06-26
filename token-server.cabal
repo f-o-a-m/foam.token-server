@@ -28,6 +28,7 @@ library
   build-depends:       base >= 4.7 && < 5
                      , aeson
                      , async
+                     , base16-bytestring
                      , binary
                      , bytestring
                      , composite-aeson
@@ -37,6 +38,8 @@ library
                      , data-default
                      , hashable
                      , haxl
+                     , http-client
+                     , http-client-tls
                      , http-api-data
                      , lens
                      , mtl

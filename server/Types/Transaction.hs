@@ -11,7 +11,8 @@ import           Control.Lens.TH      (makeWrapped)
 import           Data.Int             (Int64)
 import           Data.Text            (Text)
 import           Opaleye              (Column, PGInt8, PGText, Table (..))
-
+import Network.Ethereum.ABI.Prim.Address
+import Types.Orphans ()
 
 --------------------------------------------------------------------------------
 -- Raw Transactions
@@ -22,7 +23,7 @@ withLensesAndProxies [d|
   type CTxHash      = "transactionHash" :-> Column PGText
   type FBlockNumber = "blockNumber"     :-> Int64
   type CBlockNumber = "blockNumber"     :-> Column PGInt8
-  type FAddress     = "address"         :-> Text
+  type FAddress     = "address"         :-> Address
   type CAddress     = "address"         :-> Column PGText
   |]
 

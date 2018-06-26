@@ -1,10 +1,12 @@
+{-# LANGUAGE NamedFieldPuns #-}
+
 module Types.Application
   ( AppHandler
   , AppConfig(..)
-  , HttpProvider
+  , Web3Config(..)
+  , makeWeb3Config
   , makeAppConfig
   , transformAppHandler
-  , web3Request
   , makeConnection
   ) where
 
@@ -15,35 +17,31 @@ import           Control.Monad.Reader           (MonadReader, ReaderT,
 import           Data.String                    (fromString)
 import           Database.PostgreSQL.Simple     (ConnectInfo (..), Connection,
                                                  connect)
-import           Network.Ethereum.Web3.Address
 import           Network.Ethereum.Web3.Provider
-import           Network.Ethereum.Web3.Types    (Web3, Web3Error)
+import           Network.Ethereum.ABI.Prim.Address
 import           Servant                        (ServantErr)
 import           Servant.Server                 (Handler (..))
 import           System.Environment             (getEnv)
-import           System.IO.Unsafe               (unsafePerformIO)
+import           Network.HTTP.Client               (Manager,
+                                                    newManager)
+import           Network.HTTP.Client.TLS           (tlsManagerSettings)
 
 
--- | Web3 Config
-data HttpProvider
+data Web3Config =
+  Web3Config { manager  :: Manager
+             , provider :: Provider
+             }
 
-instance Provider HttpProvider where
-  rpcNode = return httpProvider
-
-httpProvider :: RPCNode
-httpProvider = unsafePerformIO $ do
-  uri <- getEnv "NODE_URL"
-  makeRPCNode uri
-{-# NOINLINE httpProvider #-}
-
-web3Request
-  :: Web3 HttpProvider a
-  -> IO (Either Web3Error a)
-web3Request = runWeb3
+makeWeb3Config :: IO Web3Config
+makeWeb3Config = do
+  mgr <- liftIO $ newManager tlsManagerSettings
+  url <- getEnv "NODE_URL"
+  pure $ Web3Config mgr (Provider (HttpProvider url) Nothing)
 
 -- | App Config
 data AppConfig =
   AppConfig { pgConn       :: Connection
+            , web3 :: Web3Config
             , erc20Address :: Address
             }
 
@@ -62,7 +60,9 @@ makeAppConfig :: IO AppConfig
 makeAppConfig = do
   pg <- makeConnection
   addr <- fromString <$> getEnv "TOKEN_ADDRESS"
+  web3 <- makeWeb3Config
   pure AppConfig { pgConn = pg
+                 , web3
                  , erc20Address = addr
                  }
 

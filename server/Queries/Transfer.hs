@@ -7,13 +7,10 @@ import Control.Lens (_Unwrapping, (^.))
 import Control.Monad.IO.Class (MonadIO(..))
 import Control.Monad.Reader (MonadReader, ask)
 import Data.Int (Int64)
-import Network.Ethereum.Web3.Address
+import Network.Ethereum.ABI.Prim.Address
 import Opaleye as O (Query, Column, PGInt8, (.==), (.<=), (.>=), (.&&), runQuery, queryTable, restrict, constant, orderBy, desc, distinct, min, max, aggregate)
 import qualified Types.Transfer as Transfer
 import qualified Types.Transaction as Transaction
-import Data.Text (Text)
-import Data.Traversable (forM)
-import qualified Data.List as L
 
 -- | Get all transfers by transaction hash -- possibly more than one exists
 getTransfersByHash
@@ -89,12 +86,10 @@ allReceiversInRange
   -> m [(Address, Integer)]
 allReceiversInRange start end = do
   conn <- pgConn <$> ask
-  (receivers :: [(Text, Transfer.Value)]) <- liftIO $ runQuery conn $ distinct $ proc () -> do
+  (receivers :: [(Address, Transfer.Value)]) <- liftIO $ runQuery conn $ distinct $ proc () -> do
     (_, transfer) <- transfersByBlockQuery start end -< ()
     returnA -< (transfer ^. Transfer.cTo, transfer ^. Transfer.cValue)
-  return $ case forM receivers $ \(r, v) -> fromText r >>= \r' -> return (r', Transfer.unValue v) of
-    Left err -> error err
-    Right res -> res
+  pure $ map (\(r, v) -> (r, Transfer.unValue v)) receivers
 
 getBlockRange
   :: ( MonadReader AppConfig m
@@ -110,24 +105,6 @@ getBlockRange = do
     tx <- queryTable Transaction.transactionTable -< ()
     returnA -< tx ^. Transaction.cBlockNumber
   return (mn, mx)
-
-partitionBlockRange
-  :: ( MonadReader AppConfig m
-     , MonadIO m
-     )
-  => Int
-  -> m [(Int64, Int64)]
-partitionBlockRange n = do
-    (mn,mx) <- getBlockRange
-    let blocks = [mn .. mx]
-    return $ makeStartEnds blocks
-  where
-    makeStartEnds :: [Int64] -> [(Int64, Int64)]
-    makeStartEnds l = makeStartEnds' l []
-      where
-        makeStartEnds' as accum = case splitAt n as of
-          ([],_) -> accum
-          (bs,rest) -> makeStartEnds' rest ((L.minimum bs, L.maximum bs) : accum)
 
 -- Filters
 
