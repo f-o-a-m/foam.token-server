@@ -3,9 +3,9 @@ module Api.Api where
 import Data.Proxy
 import Data.Swagger (Swagger)
 import Servant
-import Data.Text (Text)
 import qualified Types.Transaction as Transaction
 import qualified Types.Transfer as Transfer
+import Network.Ethereum.ABI.Prim.Address
 
 type GetTransfersByTransactionHash =
      "transfers"
@@ -26,15 +26,12 @@ type GetTransfersByReceiver =
   :> QueryParam "end" Transaction.FBlockNumber
   :> Get '[JSON] [Transfer.ApiTransferByBlockJson]
 
-type GetBalances =
-     "balances"
-  :> QueryParams "address" Text
-  :> Get '[JSON] [Transfer.ApiBalanceInfoJson]
-
-type GetRichestAccounts =
-     "balances"
+type GetRichestNeighbors =
+     "neighbors"
   :> "richest"
+  :> Capture "userAddress" Address
   :> QueryParam "n" Int
+  :> QueryParam "blockNumber" Integer
   :> Get '[JSON] [Transfer.ApiBalanceInfoJson]
 
 type GetSwagger =
@@ -45,8 +42,7 @@ type TokenApi =
        GetTransfersByTransactionHash
   :<|> GetTransfersBySender
   :<|> GetTransfersByReceiver
-  :<|> GetBalances
-  :<|> GetRichestAccounts
+  :<|> GetRichestNeighbors
 
 tokenApi :: Proxy TokenApi
 tokenApi = Proxy

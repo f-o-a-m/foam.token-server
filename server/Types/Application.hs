@@ -8,12 +8,13 @@ module Types.Application
   , makeAppConfig
   , transformAppHandler
   , makeConnection
+  , web3Request
   ) where
 
 import           Control.Monad.Except           (ExceptT, MonadError)
 import           Control.Monad.IO.Class         (MonadIO (..))
 import           Control.Monad.Reader           (MonadReader, ReaderT,
-                                                 runReaderT)
+                                                 runReaderT, ask)
 import           Data.String                    (fromString)
 import           Database.PostgreSQL.Simple     (ConnectInfo (..), Connection,
                                                  connect)
@@ -44,6 +45,16 @@ data AppConfig =
             , web3 :: Web3Config
             , erc20Address :: Address
             }
+
+web3Request
+  :: ( MonadReader AppConfig m
+     , MonadIO m
+     )
+  => Web3 a
+  -> m (Either Web3Error a)
+web3Request action = do
+  Web3Config{..} <- web3 <$> ask
+  liftIO $ runWeb3With manager provider action
 
 makeConnection :: IO Connection
 makeConnection = do

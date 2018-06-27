@@ -15,14 +15,13 @@ import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Reader (MonadReader, runReaderT, ask)
 import Network.Ethereum.ABI.Prim.Address
 import Network.Ethereum.Web3.Types
-import Network.Ethereum.Web3.Provider
 import Network.Ethereum.ABI.Prim.Int
 import qualified Contracts.ERC20 as ERC20
 import Data.Hashable (Hashable(..))
 import Data.Traversable (forM)
 import Data.Typeable
 import Haxl.Core
-import Types.Application (AppConfig(..), Web3Config(..))
+import Types.Application (AppConfig(..), web3Request)
 import Types.Transfer (fTo)
 import Queries.Transfer
 import Data.Default (def)
@@ -50,9 +49,10 @@ getRichestNeighbors
      , MonadIO m
      )
   => Quantity
+  -> Int
   -> Address
   -> m [(Address, Integer)]
-getRichestNeighbors bn userAddress = do
+getRichestNeighbors bn n userAddress = do
     (start, end) <- getBlockRange
     cfg <- ask
     let st = EthState {appConfig = cfg}
@@ -64,7 +64,7 @@ getRichestNeighbors bn userAddress = do
           bal <- toInteger <$> getBalanceOf bn trader
           pure (trader, bal)
         let pairs' = filter ((> 0) . snd) pairs
-        pure . take 10 . L.sortOn (Down . snd) $ pairs'
+        pure . take n . L.sortOn (Down . snd) $ pairs'
   where
     toBN = fromInteger @Quantity . toInteger
 
@@ -151,7 +151,7 @@ fetchEthReq
 fetchEthReq EthState{..} (BalanceOf bn user) = do
   let txOpts = def { callTo = Just $ erc20Address appConfig
                    }
-  eRes <- runWeb3With (manager . web3 $ appConfig) (provider . web3 $ appConfig) $ ERC20.balanceOf txOpts (BlockWithNumber bn) user
+  eRes <- runReaderT (web3Request $ ERC20.balanceOf txOpts (BlockWithNumber bn) user) appConfig
   case eRes of
     Left err -> Exception.throw (error (show err) :: Exception.SomeException)
     Right res -> pure res

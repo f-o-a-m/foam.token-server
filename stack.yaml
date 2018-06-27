@@ -9,9 +9,11 @@ packages:
 - location:
     git: https://github.com/tomjaguarpaw/haskell-opaleye
     commit: 77aa17e0e83da0a16fd8daf770833d6e00ca88e6
+  extra-dep: true
 - location:
     git: https://github.com/blinky3713/composite
     commit: ae46b52f0ea6f963a89aa1b2e3aa051a58adebfd
+  extra-dep: true
   subdirs:
     - composite-aeson
     - composite-base

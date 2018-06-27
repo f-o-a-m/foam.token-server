@@ -102,6 +102,9 @@ executable token-indexer
                      , composite-base
                      , composite-opaleye
                      , mtl
+                     , data-default
+                     , base16-bytestring
+                     , memory
                      , opaleye
                      , postgresql-simple
                      , text

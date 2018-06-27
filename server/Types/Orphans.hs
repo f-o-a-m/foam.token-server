@@ -4,9 +4,9 @@ module Types.Orphans where
 
 import           Composite.Record ((:->) (Val))
 import           Data.Proxy       (Proxy (Proxy))
-import Data.Text (Text)
+import Data.Text (Text, pack)
 import           Data.Swagger     (ToParamSchema, toParamSchema, ToSchema(..))
-import           Web.HttpApiData  (FromHttpApiData, ToHttpApiData)
+import           Web.HttpApiData  (FromHttpApiData(..), ToHttpApiData)
 import Opaleye.Internal.RunQuery (QueryRunnerColumnDefault(..), fieldQueryRunnerColumn)
 import           Opaleye              (PGBytea, Column)
 import Network.Ethereum.ABI.Prim.Address
@@ -15,6 +15,8 @@ import           Opaleye.Constant                  (Constant (..), constant)
 import Composite.Aeson.Formats.Default
 import           Data.Profunctor.Product.Default   (Default (..))
 import Data.ByteString (ByteString)
+import qualified Data.Text.Encoding as TE
+import qualified Data.ByteString.Base16 as B16
 
 
 -- Orphan instances for using `s :-> a` as a @Servant.Capture@ or @Servant.QueryParam@
@@ -37,3 +39,8 @@ instance Default Constant Address (Column PGBytea) where
 
 instance DefaultJsonFormat Address where
   defaultJsonFormat = aesonJsonFormat
+
+instance FromHttpApiData Address where
+  parseQueryParam qp = case fromHexString . fst . B16.decode . TE.encodeUtf8 $ qp of
+    Left e -> Left $ pack e
+    Right r -> Right r

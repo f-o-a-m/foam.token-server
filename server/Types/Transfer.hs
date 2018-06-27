@@ -17,11 +17,12 @@ import           Data.Swagger
 import           Opaleye              (Column, PGNumeric, PGBytea, Table (..))
 import           Types.Transaction    (CTxHash, FBlockNumber,
                                        FTxHash)
-
 import Data.Proxy
 import Opaleye.Internal.RunQuery (QueryRunnerColumnDefault(..), fieldQueryRunnerColumn)
 import GHC.Generics (Generic)
 import qualified Data.Scientific as Sci
+import           Data.Profunctor.Product.Default   (Default (..))
+import           Opaleye.Constant                  (Constant (..), constant)
 import Network.Ethereum.ABI.Prim.Address
 
 --------------------------------------------------------------------------------
@@ -40,6 +41,9 @@ instance ToSchema Value where
 
 instance QueryRunnerColumnDefault PGNumeric Value where
   queryRunnerColumnDefault = Value . truncate . toRational <$> fieldQueryRunnerColumn @Sci.Scientific
+
+instance Default Constant Value (Column PGNumeric) where
+  def = Constant $  constant @Sci.Scientific . fromInteger . unValue
 
 withLensesAndProxies [d|
   type FFrom  = "from"  :-> Address
