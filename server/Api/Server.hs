@@ -40,7 +40,10 @@ getTransfersBySender
 getTransfersBySender sender mStart mEnd = do
     let start = fromMaybe (Val 0) mStart
     end <- maybe (Val . fromInteger <$> getBlockNumber) pure mEnd
-    getTransfersFromInRange sender start end
+    transfers <- getTransfersFromInRange sender start end
+    let makeTransferWithBlock = \(bn, transfer) ->
+          (bn :*: transfer) ^. _Unwrapping Transfer.ApiTransferByBlockJson
+    pure $ map makeTransferWithBlock transfers
   where
     getBlockNumber :: AppHandler Integer
     getBlockNumber = do

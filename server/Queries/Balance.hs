@@ -2,11 +2,12 @@
 
 module Queries.Balance
   ( getBalances
-  , getRichestHolders
+  , getRichestNeighbors
   ) where
 
+import Composite.Record
 import Data.Ord (Down(..))
-import Control.Monad (join)
+import Control.Lens (view)
 import qualified Control.Exception as Exception
 import Control.Concurrent.Async
 import Control.Monad.IO.Class (MonadIO, liftIO)
@@ -21,6 +22,7 @@ import Data.Traversable (forM)
 import Data.Typeable
 import Haxl.Core
 import Types.Application (AppConfig(..), Web3Config(..))
+import Types.Transfer (fTo)
 import Queries.Transfer
 import Data.Default (def)
 import Data.Int (Int64)
@@ -121,9 +123,13 @@ fetchEthReq
 fetchEthReq EthState{..} (BalanceOf bn user) = do
   let txOpts = def { callTo = Just $ erc20Address appConfig
                    }
-  eRes <- runWeb3With (manager . web3 $ appConfig) (provider . web3 $ appConfig) $ ERC20.balanceOf txOpts user Latest
+  eRes <- runWeb3With (manager . web3 $ appConfig) (provider . web3 $ appConfig) $ ERC20.balanceOf txOpts (BlockWithNumber bn) user
   case eRes of
     Left err -> Exception.throw (error (show err) :: Exception.SomeException)
     Right res -> pure res
-fetchEthReq EthState{..} (GetTraders start end from) =
-  runReaderT (getTransfersFromInRange from start end) appConfig
+fetchEthReq EthState{..} (GetTraders start end addr) = do
+  transfers <- runReaderT (getTransfersToOrFromInRange addr (Val . toI64 $ start) (Val . toI64 $ end)) appConfig
+  return $ map (view fTo . snd) transfers
+  where
+    toI64 :: Quantity -> Int64
+    toI64 (Quantity i) = fromInteger i

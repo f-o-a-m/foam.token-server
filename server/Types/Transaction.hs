@@ -10,7 +10,7 @@ import           Composite.TH         (withLensesAndProxies)
 import           Control.Lens.TH      (makeWrapped)
 import           Data.Int             (Int64)
 import           Data.Text            (Text)
-import           Opaleye              (Column, PGInt8, PGText, Table (..))
+import           Opaleye              (Column, PGInt8, PGText, PGBytea, Table (..))
 import Network.Ethereum.ABI.Prim.Address
 import Types.Orphans ()
 
@@ -24,7 +24,7 @@ withLensesAndProxies [d|
   type FBlockNumber = "blockNumber"     :-> Int64
   type CBlockNumber = "blockNumber"     :-> Column PGInt8
   type FAddress     = "address"         :-> Address
-  type CAddress     = "address"         :-> Column PGText
+  type CAddress     = "address"         :-> Column PGBytea
   |]
 
 type ApiTransaction = '[FTxHash, FAddress, FBlockNumber]

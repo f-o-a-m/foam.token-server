@@ -13,9 +13,8 @@ import           Composite.Swagger.TH (makeToSchema)
 import           Composite.TH         (withLensesAndProxies)
 import           Control.Lens.TH      (makeWrapped)
 import           Data.Aeson           (ToJSON, FromJSON)
-import           Data.Text            (Text)
 import           Data.Swagger
-import           Opaleye              (Column, PGNumeric, PGText, Table (..))
+import           Opaleye              (Column, PGNumeric, PGBytea, Table (..))
 import           Types.Transaction    (CTxHash, FBlockNumber,
                                        FTxHash)
 
@@ -23,6 +22,7 @@ import Data.Proxy
 import Opaleye.Internal.RunQuery (QueryRunnerColumnDefault(..), fieldQueryRunnerColumn)
 import GHC.Generics (Generic)
 import qualified Data.Scientific as Sci
+import Network.Ethereum.ABI.Prim.Address
 
 --------------------------------------------------------------------------------
 -- | Token Transfers
@@ -42,13 +42,13 @@ instance QueryRunnerColumnDefault PGNumeric Value where
   queryRunnerColumnDefault = Value . truncate . toRational <$> fieldQueryRunnerColumn @Sci.Scientific
 
 withLensesAndProxies [d|
-  type FFrom  = "from"  :-> Text
-  type CFrom  = "from"  :-> Column PGText
-  type FTo    = "to"    :-> Text
-  type CTo    = "to"    :-> Column PGText
+  type FFrom  = "from"  :-> Address
+  type CFrom  = "from"  :-> Column PGBytea
+  type FTo    = "to"    :-> Address
+  type CTo    = "to"    :-> Column PGBytea
   type FValue = "value" :-> Value
   type CValue = "value" :-> Column PGNumeric
-  type FAddress = "address" :-> Text
+  type FAddress = "address" :-> Address
   |]
 
 transferTable :: Table (Record DBTransferCols) (Record DBTransferCols)

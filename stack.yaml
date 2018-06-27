@@ -4,7 +4,7 @@ packages:
 - .
 - location:
     git: https://github.com/f-o-a-m/hs-web3
-    commit: b61c1f4c5837873de91ed10b440d0c6d24cb1f1b
+    commit: a911779efa4b1bd9963b3a65a57711660661392b
   extra-dep: true
 - location:
     git: https://github.com/tomjaguarpaw/haskell-opaleye

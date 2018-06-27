@@ -8,9 +8,10 @@ import Control.Monad.IO.Class (MonadIO(..))
 import Control.Monad.Reader (MonadReader, ask)
 import Data.Int (Int64)
 import Network.Ethereum.ABI.Prim.Address
-import Opaleye as O (Query, Column, PGInt8, (.==), (.<=), (.>=), (.&&), runQuery, queryTable, restrict, constant, orderBy, desc, distinct, min, max, aggregate)
+import Opaleye as O (Query, Column, PGInt8, (.==), (.<=), (.>=), (.&&), runQuery, queryTable, restrict, constant, orderBy, desc, distinct, min, max, aggregate, (.||))
 import qualified Types.Transfer as Transfer
 import qualified Types.Transaction as Transaction
+import Types.Orphans ()
 
 -- | Get all transfers by transaction hash -- possibly more than one exists
 getTransfersByHash
@@ -36,15 +37,12 @@ getTransfersFromInRange
   => Transfer.FFrom
   -> Transaction.FBlockNumber
   -> Transaction.FBlockNumber
-  -> m [Transfer.ApiTransferByBlockJson]
+  -> m [(Int64, Record Transfer.DBTransfer)]
 getTransfersFromInRange mFrom (Val start) (Val end) = do
     conn <- pgConn <$> ask
     let transfersByBlockQ = transfersByBlockQuery start end
         query =  transfersByBlockQ `filterJoinBySender` mFrom
-    (transfers :: [(Int64, Record Transfer.DBTransfer)]) <- liftIO . runQuery conn $ query
-    let makeTransferWithBlock = \(bn, transfer) ->
-          (bn :*: transfer) ^. _Unwrapping Transfer.ApiTransferByBlockJson
-    pure $ map makeTransferWithBlock transfers
+    liftIO . runQuery conn $ query
 
 -- | Get all transfers in a block range based on a `to` account.
 getTransfersToInRange
@@ -63,6 +61,23 @@ getTransfersToInRange receiver (Val start) (Val end) = do
     let makeTransferWithBlock = \(bn, transfer) ->
           (bn :*: transfer) ^. _Unwrapping Transfer.ApiTransferByBlockJson
     pure $ map makeTransferWithBlock transfers
+
+
+-- | Get all transfers in a block range based on a `from` account.
+getTransfersToOrFromInRange
+  :: ( MonadReader AppConfig m
+     , MonadIO m
+     )
+  => Address
+  -> Transaction.FBlockNumber
+  -> Transaction.FBlockNumber
+  -> m [(Int64, Record Transfer.DBTransfer)]
+getTransfersToOrFromInRange addr (Val start) (Val end) = do
+    conn <- pgConn <$> ask
+    let transfersByBlockQ = transfersByBlockQuery start end
+        query =  transfersByBlockQ `filterJoinBySenderOrReceiver` addr
+    liftIO . runQuery conn $ query
+
 
 -- | Get all the transfers in a certain block range
 transfersByBlockQuery
@@ -146,4 +161,15 @@ filterJoinByReceiver
 filterJoinByReceiver query (Val receiver) = proc () -> do
   res@(_, transfer) <- query -< ()
   restrict -< transfer ^. Transfer.cTo .== constant receiver
+  returnA -< res
+
+
+-- | filter a join on transfers by `to` field
+filterJoinBySenderOrReceiver
+  :: Query (a, Record Transfer.DBTransferCols)
+  -> Address
+  -> Query (a, Record Transfer.DBTransferCols)
+filterJoinBySenderOrReceiver query addr = proc () -> do
+  res@(_, transfer) <- query -< ()
+  restrict -< (transfer ^. Transfer.cTo .== constant addr) .|| (transfer ^. Transfer.cFrom .== constant addr)
   returnA -< res
