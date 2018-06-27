@@ -9,7 +9,8 @@ PGPASSWORD ?= password
 PGDATABASE ?= token_db
 
 # This is the OmiseGo ERC20 main-net contract address.
-TOKEN_ADDRESS ?= "0xd26114cd6ee289accf82350c8d8487fedb8a0c07"
+TOKEN_ADDRESS ?= 0xd26114cd6EE289AccF82350c8d8487fedB8A0C07
+# STARTING_BLOCK ?= 5509406
 
 help: ## Ask for help!
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -43,5 +44,4 @@ token-server: stack ## start the token server.
 
 token-indexer: stack ## start the token indexer.
 	NODE_URL=$(NODE_URL) \
-	STARTING_BLOCK=$(STARTING_BLOCK) \
 	token-indexer

@@ -19,12 +19,13 @@ import           Network.Ethereum.ABI.Prim.Address
 import           Network.Ethereum.ABI.Prim.Int
 import           Network.Ethereum.Contract.Event
 import           Network.Ethereum.Web3
+import           Network.Ethereum.Web3.Provider
 import           Network.Ethereum.Web3.Types
 import           Opaleye                           (aggregate, constant, count,
                                                     runInsertMany, runQuery)
 import           Queries.Transaction               (mostRecentTransactionBlockQuery)
 import           System.Environment                (getEnv, lookupEnv)
-import           Types.Application                 (makeConnection)
+import           Types.Application
 import           Types.Transaction                 as Transaction
 import           Types.Transfer                    as Transfer
 
@@ -33,9 +34,10 @@ import           Data.String                       (fromString)
 main :: IO ()
 main = do
   conn <- makeConnection
+  Web3Config{..} <- makeWeb3Config
   address <- fromString <$> getEnv "TOKEN_ADDRESS"
   start <- getStartingBlock conn
-  void $ runWeb3 $ eventLoop conn address start
+  void $ runWeb3With manager provider $ eventLoop conn address start
 
 getStartingBlock
   :: Connection
@@ -74,7 +76,8 @@ eventLoop conn addr start =  do
   let fltr = (def  :: Filter ERC20.Transfer) { filterAddress = Just [addr]
                                              , filterFromBlock = BlockWithNumber start
                                              }
-  void $ eventMany' fltr 50 $ \t@ERC20.Transfer{..} -> do
+  liftIO $ print $ show fltr
+  void $ eventMany' fltr 100 $ \t@ERC20.Transfer{..} -> do
     change <- ask
     liftIO . print $ "Got Transfer : " ++ show t
     let Just (Quantity bn) = changeBlockNumber change
