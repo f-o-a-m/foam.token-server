@@ -2,21 +2,25 @@
 {-# LANGUAGE TypeApplications #-}
 module Types.Orphans where
 
-import           Composite.Record ((:->) (Val))
-import           Data.Proxy       (Proxy (Proxy))
-import Data.Text (Text, pack)
-import           Data.Swagger     (ToParamSchema, toParamSchema, ToSchema(..))
-import           Web.HttpApiData  (FromHttpApiData(..), ToHttpApiData)
-import Opaleye.Internal.RunQuery (QueryRunnerColumnDefault(..), fieldQueryRunnerColumn)
-import           Opaleye              (PGBytea, Column)
-import Network.Ethereum.ABI.Prim.Address
-import Composite.Aeson.Formats.Generic
-import           Opaleye.Constant                  (Constant (..), constant)
-import Composite.Aeson.Formats.Default
+import           Composite.Aeson.Formats.Default
+import           Composite.Aeson.Formats.Generic
+import           Composite.Record                  ((:->) (Val))
+import           Data.ByteString                   (ByteString)
+import qualified Data.ByteString.Base16            as B16
 import           Data.Profunctor.Product.Default   (Default (..))
-import Data.ByteString (ByteString)
-import qualified Data.Text.Encoding as TE
-import qualified Data.ByteString.Base16 as B16
+import           Data.Proxy                        (Proxy (Proxy))
+import           Data.Swagger                      (ToParamSchema,
+                                                    ToSchema (..),
+                                                    toParamSchema)
+import           Data.Text                         (Text, pack)
+import qualified Data.Text.Encoding                as TE
+import           Network.Ethereum.ABI.Prim.Address
+import           Opaleye                           (Column, PGBytea)
+import           Opaleye.Constant                  (Constant (..), constant)
+import           Opaleye.Internal.RunQuery         (QueryRunnerColumnDefault (..),
+                                                    fieldQueryRunnerColumn)
+import           Web.HttpApiData                   (FromHttpApiData (..),
+                                                    ToHttpApiData)
 
 
 -- Orphan instances for using `s :-> a` as a @Servant.Capture@ or @Servant.QueryParam@
@@ -42,5 +46,5 @@ instance DefaultJsonFormat Address where
 
 instance FromHttpApiData Address where
   parseQueryParam qp = case fromHexString . fst . B16.decode . TE.encodeUtf8 $ qp of
-    Left e -> Left $ pack e
+    Left e  -> Left $ pack e
     Right r -> Right r

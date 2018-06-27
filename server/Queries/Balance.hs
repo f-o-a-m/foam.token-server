@@ -6,27 +6,28 @@ module Queries.Balance
   , getRichestNeighborsK
   ) where
 
-import Composite.Record
-import Data.Ord (Down(..))
-import Control.Lens (view)
-import qualified Control.Exception as Exception
-import Control.Concurrent.Async
-import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.Reader (MonadReader, runReaderT, ask)
-import Network.Ethereum.ABI.Prim.Address
-import Network.Ethereum.Web3.Types
-import Network.Ethereum.ABI.Prim.Int
-import qualified Contracts.ERC20 as ERC20
-import Data.Hashable (Hashable(..))
-import Data.Traversable (forM)
-import Data.Typeable
-import Haxl.Core
-import Types.Application (AppConfig(..), web3Request)
-import Types.Transfer (fTo)
-import Queries.Transfer
-import Data.Default (def)
-import Data.Int (Int64)
-import qualified Data.List as L
+import           Composite.Record
+import qualified Contracts.ERC20                   as ERC20
+import           Control.Concurrent.Async
+import qualified Control.Exception                 as Exception
+import           Control.Lens                      (view)
+import           Control.Monad.IO.Class            (MonadIO, liftIO)
+import           Control.Monad.Reader              (MonadReader, ask,
+                                                    runReaderT)
+import           Data.Default                      (def)
+import           Data.Hashable                     (Hashable (..))
+import           Data.Int                          (Int64)
+import qualified Data.List                         as L
+import           Data.Ord                          (Down (..))
+import           Data.Traversable                  (forM)
+import           Data.Typeable
+import           Haxl.Core
+import           Network.Ethereum.ABI.Prim.Address
+import           Network.Ethereum.ABI.Prim.Int
+import           Network.Ethereum.Web3.Types
+import           Queries.Transfer
+import           Types.Application                 (AppConfig (..), web3Request)
+import           Types.Transfer                    (fTo)
 
 
 getBalances

@@ -2,10 +2,10 @@
 
 module Main where
 
-import Data.Int (Int64)
-import Database.PostgreSQL.Simple (Connection, execute_)
-import Database.PostgreSQL.Simple.SqlQQ
-import Types.Application (makeConnection)
+import           Data.Int                         (Int64)
+import           Database.PostgreSQL.Simple       (Connection, execute_)
+import           Database.PostgreSQL.Simple.SqlQQ
+import           Types.Application                (makeConnection)
 
 main :: IO ()
 main = do

@@ -1,11 +1,11 @@
 module Api.Api where
 
-import Data.Proxy
-import Data.Swagger (Swagger)
-import Servant
-import qualified Types.Transaction as Transaction
-import qualified Types.Transfer as Transfer
-import Network.Ethereum.ABI.Prim.Address
+import           Data.Proxy
+import           Data.Swagger                      (Swagger)
+import           Network.Ethereum.ABI.Prim.Address
+import           Servant
+import qualified Types.Transaction                 as Transaction
+import qualified Types.Transfer                    as Transfer
 
 type GetTransfersByTransactionHash =
      "transfers"

@@ -1,29 +1,31 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeApplications           #-}
 
 
 module Types.Transfer where
 
 import           Composite
 import           Composite.Aeson
-import           Composite.Aeson.TH   (makeRecordJsonWrapper)
-import           Composite.Opaleye    (defaultRecTable)
-import           Composite.Swagger.TH (makeToSchema)
-import           Composite.TH         (withLensesAndProxies)
-import           Control.Lens.TH      (makeWrapped)
-import           Data.Aeson           (ToJSON, FromJSON)
-import           Data.Swagger
-import           Opaleye              (Column, PGNumeric, PGBytea, Table (..))
-import           Types.Transaction    (CTxHash, FBlockNumber,
-                                       FTxHash)
-import Data.Proxy
-import Opaleye.Internal.RunQuery (QueryRunnerColumnDefault(..), fieldQueryRunnerColumn)
-import GHC.Generics (Generic)
-import qualified Data.Scientific as Sci
+import           Composite.Aeson.TH                (makeRecordJsonWrapper)
+import           Composite.Opaleye                 (defaultRecTable)
+import           Composite.Swagger.TH              (makeToSchema)
+import           Composite.TH                      (withLensesAndProxies)
+import           Control.Lens.TH                   (makeWrapped)
+import           Data.Aeson                        (FromJSON, ToJSON)
 import           Data.Profunctor.Product.Default   (Default (..))
+import           Data.Proxy
+import qualified Data.Scientific                   as Sci
+import           Data.Swagger
+import           GHC.Generics                      (Generic)
+import           Network.Ethereum.ABI.Prim.Address
+import           Opaleye                           (Column, PGBytea, PGNumeric,
+                                                    Table (..))
 import           Opaleye.Constant                  (Constant (..), constant)
-import Network.Ethereum.ABI.Prim.Address
+import           Opaleye.Internal.RunQuery         (QueryRunnerColumnDefault (..),
+                                                    fieldQueryRunnerColumn)
+import           Types.Transaction                 (CTxHash, FBlockNumber,
+                                                    FTxHash)
 
 --------------------------------------------------------------------------------
 -- | Token Transfers

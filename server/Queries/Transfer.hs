@@ -1,17 +1,23 @@
 module Queries.Transfer where
 
-import Types.Application (AppConfig(..))
-import Composite.Record
-import Control.Arrow (returnA)
-import Control.Lens (_Unwrapping, (^.))
-import Control.Monad.IO.Class (MonadIO(..))
-import Control.Monad.Reader (MonadReader, ask)
-import Data.Int (Int64)
-import Network.Ethereum.ABI.Prim.Address
-import Opaleye as O (Query, Column, PGInt8, (.==), (.<=), (.>=), (.&&), runQuery, queryTable, restrict, constant, orderBy, desc, distinct, min, max, aggregate, (.||))
-import qualified Types.Transfer as Transfer
-import qualified Types.Transaction as Transaction
-import Types.Orphans ()
+import           Composite.Record
+import           Control.Arrow                     (returnA)
+import           Control.Lens                      ((^.), _Unwrapping)
+import           Control.Monad.IO.Class            (MonadIO (..))
+import           Control.Monad.Reader              (MonadReader, ask)
+import           Data.Int                          (Int64)
+import           Network.Ethereum.ABI.Prim.Address
+import           Opaleye                           as O (Column, PGInt8, Query,
+                                                         aggregate, constant,
+                                                         desc, distinct, max,
+                                                         min, orderBy,
+                                                         queryTable, restrict,
+                                                         runQuery, (.&&), (.<=),
+                                                         (.==), (.>=), (.||))
+import           Types.Application                 (AppConfig (..))
+import           Types.Orphans                     ()
+import qualified Types.Transaction                 as Transaction
+import qualified Types.Transfer                    as Transfer
 
 -- | Get all transfers by transaction hash -- possibly more than one exists
 getTransfersByHash

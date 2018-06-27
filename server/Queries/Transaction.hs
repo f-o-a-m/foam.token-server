@@ -1,8 +1,9 @@
 module Queries.Transaction where
 
-import Control.Arrow (returnA)
-import Control.Lens ((^.))
-import Opaleye (Query, Column, PGInt8, orderBy, desc, limit, queryTable, countRows)
+import           Control.Arrow     (returnA)
+import           Control.Lens      ((^.))
+import           Opaleye           (Column, PGInt8, Query, countRows, desc,
+                                    limit, orderBy, queryTable)
 import qualified Types.Transaction as Transaction
 
 mostRecentTransactionBlockQuery :: Query (Column PGInt8)

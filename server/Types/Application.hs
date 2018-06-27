@@ -11,21 +11,20 @@ module Types.Application
   , web3Request
   ) where
 
-import           Control.Monad.Except           (ExceptT, MonadError)
-import           Control.Monad.IO.Class         (MonadIO (..))
-import           Control.Monad.Reader           (MonadReader, ReaderT,
-                                                 runReaderT, ask)
-import           Data.String                    (fromString)
-import           Database.PostgreSQL.Simple     (ConnectInfo (..), Connection,
-                                                 connect)
-import           Network.Ethereum.Web3.Provider
+import           Control.Monad.Except              (ExceptT, MonadError)
+import           Control.Monad.IO.Class            (MonadIO (..))
+import           Control.Monad.Reader              (MonadReader, ReaderT, ask,
+                                                    runReaderT)
+import           Data.String                       (fromString)
+import           Database.PostgreSQL.Simple        (ConnectInfo (..),
+                                                    Connection, connect)
 import           Network.Ethereum.ABI.Prim.Address
-import           Servant                        (ServantErr)
-import           Servant.Server                 (Handler (..))
-import           System.Environment             (getEnv)
-import           Network.HTTP.Client               (Manager,
-                                                    newManager)
+import           Network.Ethereum.Web3.Provider
+import           Network.HTTP.Client               (Manager, newManager)
 import           Network.HTTP.Client.TLS           (tlsManagerSettings)
+import           Servant                           (ServantErr)
+import           Servant.Server                    (Handler (..))
+import           System.Environment                (getEnv)
 
 
 data Web3Config =
@@ -42,7 +41,7 @@ makeWeb3Config = do
 -- | App Config
 data AppConfig =
   AppConfig { pgConn       :: Connection
-            , web3 :: Web3Config
+            , web3         :: Web3Config
             , erc20Address :: Address
             }
 

@@ -2,17 +2,18 @@
 
 module Types.Transaction where
 
-import           Composite            ((:->), Record)
-import           Composite.Aeson.TH   (makeRecordJsonWrapper)
-import           Composite.Opaleye    (defaultRecTable)
-import           Composite.Swagger.TH (makeToSchema)
-import           Composite.TH         (withLensesAndProxies)
-import           Control.Lens.TH      (makeWrapped)
-import           Data.Int             (Int64)
-import           Data.Text            (Text)
-import           Opaleye              (Column, PGInt8, PGText, PGBytea, Table (..))
-import Network.Ethereum.ABI.Prim.Address
-import Types.Orphans ()
+import           Composite                         ((:->), Record)
+import           Composite.Aeson.TH                (makeRecordJsonWrapper)
+import           Composite.Opaleye                 (defaultRecTable)
+import           Composite.Swagger.TH              (makeToSchema)
+import           Composite.TH                      (withLensesAndProxies)
+import           Control.Lens.TH                   (makeWrapped)
+import           Data.Int                          (Int64)
+import           Data.Text                         (Text)
+import           Network.Ethereum.ABI.Prim.Address
+import           Opaleye                           (Column, PGBytea, PGInt8,
+                                                    PGText, Table (..))
+import           Types.Orphans                     ()
 
 --------------------------------------------------------------------------------
 -- Raw Transactions
