@@ -35,6 +35,7 @@ library
                      , composite-base
                      , composite-opaleye
                      , composite-swagger
+                     , containers
                      , data-default
                      , hashable
                      , haxl
@@ -50,6 +51,7 @@ library
                      , scientific
                      , servant-server
                      , servant-swagger
+                     , servant-swagger-ui
                      , string-conversions
                      , swagger2
                      , text

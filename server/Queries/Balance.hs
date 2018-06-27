@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ApplicativeDo #-}
 
 module Queries.Balance
   ( getBalances
@@ -8,9 +9,8 @@ module Queries.Balance
 
 import           Composite.Record
 import qualified Contracts.ERC20                   as ERC20
-import           Control.Concurrent.Async
+-- import           Control.Concurrent.Async
 import qualified Control.Exception                 as Exception
-import           Control.Lens                      (view)
 import           Control.Monad.IO.Class            (MonadIO, liftIO)
 import           Control.Monad.Reader              (MonadReader, ask,
                                                     runReaderT)
@@ -27,7 +27,7 @@ import           Network.Ethereum.ABI.Prim.Int
 import           Network.Ethereum.Web3.Types
 import           Queries.Transfer
 import           Types.Application                 (AppConfig (..), web3Request)
-import           Types.Transfer                    (fTo)
+import Data.Monoid
 
 
 getBalances
@@ -74,9 +74,10 @@ getRichestNeighborsK
   :: (MonadReader AppConfig m, MonadIO m)
   => Quantity
   -> Int
+  -> Int
   -> Address
   -> m [(Address, Integer)]
-getRichestNeighborsK bn k userAddress = do
+getRichestNeighborsK bn n k userAddress = do
     (start, end) <- getBlockRange
     cfg <- ask
     let st = EthState {appConfig = cfg}
@@ -88,13 +89,15 @@ getRichestNeighborsK bn k userAddress = do
           bal <- getBalanceOf bn t
           pure (t, toInteger bal)
         let pairs' = filter ((> 0) . snd) pairs
-        pure . take 10 . L.sortOn (Down . snd) $ pairs'
+        pure . take n . L.sortOn (Down . snd) $ pairs'
   where
     toBN = fromInteger @Quantity . toInteger
+    getAllTraders :: Quantity -> Quantity -> Int -> Address -> GenHaxl u [Address]
     getAllTraders _ _ 0 _ = pure []
     getAllTraders s e k' addr = do
       traders <- getTradersInBlockRange s e addr
-      concat <$> mapM (getAllTraders s e (k'-1)) traders
+      rest <- concat <$> mapM (getAllTraders s e (k'-1)) traders
+      pure $ traders <> rest
 
 -- | Request Algebra
 data EthReq a where
@@ -120,30 +123,32 @@ instance DataSourceName EthReq where
   dataSourceName _ = "EthDataSource"
 
 instance DataSource u EthReq where
-  fetch _state _flags _user bfs = AsyncFetch $ \inner -> do
-    asyncs <- mapM (fetchAsync _state) bfs
-    inner
-    mapM_ wait asyncs
+  fetch _state _flags _user = BackgroundFetch $  mapM_ (fetch' _state)
+    --asyncs <- mapM (fetchAsync _state) bfs
+    --inner
+    --mapM_ wait asyncs
+    where
+      fetch'
+        :: State EthReq
+        -> BlockedFetch EthReq
+        -> IO ()
+      fetch' _state (BlockedFetch req rvar) =
+        do
+          e <- Exception.try $ fetchEthReq _state req
+          case e of
+            Left ex -> putFailure rvar (ex :: Exception.SomeException)
+            Right a -> putSuccess rvar a
 
 -- Queries
 getBalanceOf :: Quantity -> Address -> GenHaxl u (UIntN 256)
 getBalanceOf bn addr = dataFetch (BalanceOf bn addr)
 
 getTradersInBlockRange :: Quantity -> Quantity -> Address -> GenHaxl u [Address]
-getTradersInBlockRange start end from = dataFetch (GetTraders start end from)
+getTradersInBlockRange start end addr = dataFetch (GetTraders start end addr)
 
 -- Helpers
 
-fetchAsync
-  :: State EthReq
-  -> BlockedFetch EthReq
-  -> IO (Async ())
-fetchAsync _state (BlockedFetch req rvar) =
-  async $ do
-    e <- Exception.try $ fetchEthReq _state req
-    case e of
-      Left ex -> putFailure rvar (ex :: Exception.SomeException)
-      Right a -> putSuccess rvar a
+
 
 fetchEthReq
   :: State EthReq
@@ -157,8 +162,7 @@ fetchEthReq EthState{..} (BalanceOf bn user) = do
     Left err -> Exception.throw (error (show err) :: Exception.SomeException)
     Right res -> pure res
 fetchEthReq EthState{..} (GetTraders start end addr) = do
-  transfers <- runReaderT (getTransfersToOrFromInRange addr (Val . toI64 $ start) (Val . toI64 $ end)) appConfig
-  return $ map (view fTo . snd) transfers
+  runReaderT (getTradersInRange addr (Val . toI64 $ start) (Val . toI64 $ end)) appConfig
   where
     toI64 :: Quantity -> Int64
     toI64 (Quantity i) = fromInteger i

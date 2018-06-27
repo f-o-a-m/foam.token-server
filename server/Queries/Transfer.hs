@@ -18,6 +18,8 @@ import           Types.Application                 (AppConfig (..))
 import           Types.Orphans                     ()
 import qualified Types.Transaction                 as Transaction
 import qualified Types.Transfer                    as Transfer
+import qualified Data.Set as S
+import Control.Monad.State (State, get, modify, evalState)
 
 -- | Get all transfers by transaction hash -- possibly more than one exists
 getTransfersByHash
@@ -70,19 +72,35 @@ getTransfersToInRange receiver (Val start) (Val end) = do
 
 
 -- | Get all transfers in a block range based on a `from` account.
-getTransfersToOrFromInRange
+getTradersInRange
   :: ( MonadReader AppConfig m
      , MonadIO m
      )
   => Address
   -> Transaction.FBlockNumber
   -> Transaction.FBlockNumber
-  -> m [(Int64, Record Transfer.DBTransfer)]
-getTransfersToOrFromInRange addr (Val start) (Val end) = do
+  -> m [Address]
+getTradersInRange addr (Val start) (Val end) = do
     conn <- pgConn <$> ask
     let transfersByBlockQ = transfersByBlockQuery start end
-        query =  transfersByBlockQ `filterJoinBySenderOrReceiver` addr
-    liftIO . runQuery conn $ query
+        query =  proc () -> do
+          (_, transfer) <- transfersByBlockQ `filterJoinBySenderOrReceiver` addr -< ()
+          returnA -< (transfer ^. Transfer.cFrom, transfer ^. Transfer.cTo)
+    ftPairs :: [(Address, Address)] <- liftIO . runQuery conn $ query
+    pure $ evalState (deduper addr ftPairs) S.empty
+  where
+    deduper :: Address -> [(Address, Address)] -> State (S.Set Address) [Address]
+    deduper _ [] = pure []
+    deduper initial ((from, to) : rest) = do
+      let other = if initial == from then to else from
+      cache <- get
+      if other `S.member` cache
+        then deduper initial rest
+        else do
+          modify $ S.insert other
+          others <- deduper initial rest
+          pure $ other : others
+
 
 
 -- | Get all the transfers in a certain block range

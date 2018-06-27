@@ -6,14 +6,12 @@ import           Composite.Aeson.Formats.Default
 import           Composite.Aeson.Formats.Generic
 import           Composite.Record                  ((:->) (Val))
 import           Data.ByteString                   (ByteString)
-import qualified Data.ByteString.Base16            as B16
 import           Data.Profunctor.Product.Default   (Default (..))
 import           Data.Proxy                        (Proxy (Proxy))
 import           Data.Swagger                      (ToParamSchema,
                                                     ToSchema (..),
                                                     toParamSchema)
-import           Data.Text                         (Text, pack)
-import qualified Data.Text.Encoding                as TE
+import           Data.Text                         (Text, unpack)
 import           Network.Ethereum.ABI.Prim.Address
 import           Opaleye                           (Column, PGBytea)
 import           Opaleye.Constant                  (Constant (..), constant)
@@ -21,7 +19,7 @@ import           Opaleye.Internal.RunQuery         (QueryRunnerColumnDefault (..
                                                     fieldQueryRunnerColumn)
 import           Web.HttpApiData                   (FromHttpApiData (..),
                                                     ToHttpApiData)
-
+import Data.String (fromString)
 
 -- Orphan instances for using `s :-> a` as a @Servant.Capture@ or @Servant.QueryParam@
 instance ToParamSchema a => ToParamSchema (s :-> a) where
@@ -45,6 +43,4 @@ instance DefaultJsonFormat Address where
   defaultJsonFormat = aesonJsonFormat
 
 instance FromHttpApiData Address where
-  parseQueryParam qp = case fromHexString . fst . B16.decode . TE.encodeUtf8 $ qp of
-    Left e  -> Left $ pack e
-    Right r -> Right r
+  parseQueryParam = Right . fromString . unpack

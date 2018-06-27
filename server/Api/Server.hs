@@ -6,7 +6,6 @@ import           Control.Lens                         ((^.), _Unwrapping)
 import           Control.Monad.Except                 (throwError)
 import           Data.Maybe                           (fromMaybe)
 import           Data.String.Conversions              (cs)
-import           Data.Swagger                         (Swagger)
 import           Network.Ethereum.ABI.Prim.Address
 import qualified Network.Ethereum.Web3.Eth            as Eth
 import           Network.Ethereum.Web3.Types
@@ -16,10 +15,14 @@ import           Queries.Balance
 import           Queries.Transfer
 import           Servant
 import           Servant.Swagger                      (toSwagger)
+import Servant.Swagger.UI (swaggerSchemaUIServer)
 import           Types.Application
 import           Types.Orphans                        ()
 import qualified Types.Transaction                    as Transaction
 import qualified Types.Transfer                       as Transfer
+import qualified Contracts.ERC20 as ERC20
+import Control.Monad.Reader (ask)
+import Data.Default (def)
 
 -- | get all the transfers for a transaction based on the hash
 -- | -- a singler transaction can cause more than one transfer.
@@ -27,6 +30,19 @@ getTransfersByTransactionHash
   :: Transaction.FTxHash
   -> AppHandler [Transfer.ApiTransferJson]
 getTransfersByTransactionHash = getTransfersByHash
+
+getUserBalanceAtBlock
+  :: Address
+  -> Integer
+  -> AppHandler Integer
+getUserBalanceAtBlock addr bn = do
+  tokenAddress <- erc20Address <$> ask
+  let txOpts = def { callTo = Just tokenAddress
+                   }
+  eRes <- web3Request (ERC20.balanceOf txOpts (BlockWithNumber (Quantity bn)) addr)
+  case eRes of
+    Left err -> throwError $ err500 {errBody = cs $ show err}
+    Right b -> pure $ toInteger b
 
 -- | Get all transfers from a certain sender, with the option to specify the range
 -- | to within a certain block interval including the endpoints
@@ -75,7 +91,7 @@ getRichestNeighbors'
   -> Maybe Integer
   -> AppHandler [Transfer.ApiBalanceInfoJson]
 getRichestNeighbors' addr mn mbn = do
-  let n = fromMaybe 10 mn
+  let n = fromMaybe 5 mn
   (start, end) <- getBlockRange
   let bn = fromMaybe (toInteger end) mbn
   if not (bn >= toInteger start && bn <= toInteger end)
@@ -85,24 +101,40 @@ getRichestNeighbors' addr mn mbn = do
       return . flip map neighs $ \(a,b) ->
         (a :*: fromInteger b :*: RNil) ^. _Unwrapping Transfer.ApiBalanceInfoJson
 
+getRichestNeighborsK'
+  :: Address
+  -> Maybe Int
+  -> Int
+  -> Maybe Integer
+  -> AppHandler [Transfer.ApiBalanceInfoJson]
+getRichestNeighborsK' addr mn k mbn = do
+  let n = fromMaybe 5 mn
+  (start, end) <- getBlockRange
+  let bn = fromMaybe (toInteger end) mbn
+  if not (bn >= toInteger start && bn <= toInteger end)
+    then throwError $ err500 {errBody = "Block out of range."}
+    else do
+      neighs <- getRichestNeighborsK (Quantity bn) n k addr
+      return . flip map neighs $ \(a,b) ->
+        (a :*: fromInteger b :*: RNil) ^. _Unwrapping Transfer.ApiBalanceInfoJson
+
 -- | Token server
 tokenServer :: ServerT TokenApi AppHandler
 tokenServer =
-       getTransfersByTransactionHash
+       getUserBalanceAtBlock
+  :<|> getTransfersByTransactionHash
   :<|> getTransfersBySender
   :<|> getTransfersByReceiver
   :<|> getRichestNeighbors'
-
--- | Swagger
-getSwagger :: Swagger
-getSwagger = toSwagger tokenApi
-
+  :<|> getRichestNeighborsK'
 
 -- | Api server
 startServer :: IO ()
 startServer = do
   cfg <- makeAppConfig
-  let server = pure getSwagger :<|> hoistServer tokenApi (transformAppHandler cfg) tokenServer
+  let swaggerDoc = toSwagger tokenApi
+      server =      swaggerSchemaUIServer swaggerDoc
+              :<|> hoistServer tokenApi (transformAppHandler cfg) tokenServer
   run 9000 $
     logStdoutDev $
     serve api server

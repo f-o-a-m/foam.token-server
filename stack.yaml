@@ -4,11 +4,11 @@ packages:
 - .
 - location:
     git: https://github.com/f-o-a-m/hs-web3
-    commit: a911779efa4b1bd9963b3a65a57711660661392b
+    commit: b45fcbf4f5492c823589194639defe204ec3d5dc
   extra-dep: true
 - location:
     git: https://github.com/tomjaguarpaw/haskell-opaleye
-    commit: 77aa17e0e83da0a16fd8daf770833d6e00ca88e6
+    commit: 1f99306b7eb8cc3c3274f615444200738bdfa3b4
   extra-dep: true
 - location:
     git: https://github.com/blinky3713/composite
@@ -24,6 +24,7 @@ packages:
 extra-deps:
  - relapse-1.0.0.0
  - secp256k1-0.5.2
+ - haxl-2.0.1.0
 
 
 allow-newer: true

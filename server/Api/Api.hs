@@ -1,11 +1,18 @@
 module Api.Api where
 
 import           Data.Proxy
-import           Data.Swagger                      (Swagger)
 import           Network.Ethereum.ABI.Prim.Address
 import           Servant
 import qualified Types.Transaction                 as Transaction
 import qualified Types.Transfer                    as Transfer
+import Servant.Swagger.UI
+
+
+type GetUserBalanceAtBlock =
+     "balance"
+  :> Capture "userAddress" Address
+  :> QueryParam' '[Required] "blockNumber" Integer
+  :> Get '[JSON] Integer
 
 type GetTransfersByTransactionHash =
      "transfers"
@@ -20,7 +27,7 @@ type GetTransfersBySender =
   :> Get '[JSON] [Transfer.ApiTransferByBlockJson]
 
 type GetTransfersByReceiver =
-     "transfers_by_sender"
+     "transfers_by_receiver"
   :> Capture "receiver" Transfer.FTo
   :> QueryParam "start" Transaction.FBlockNumber
   :> QueryParam "end" Transaction.FBlockNumber
@@ -34,18 +41,29 @@ type GetRichestNeighbors =
   :> QueryParam "blockNumber" Integer
   :> Get '[JSON] [Transfer.ApiBalanceInfoJson]
 
-type GetSwagger =
-     "swagger"
-  :> Get '[JSON] Swagger
+type GetRichestNeighborsK =
+     "neighbors"
+  :> "richestK"
+  :> Capture "userAddress" Address
+  :> QueryParam "nResults" Int
+  :> QueryParam' '[Required] "k" Int
+  :> QueryParam "blockNumber" Integer
+  :> Get '[JSON] [Transfer.ApiBalanceInfoJson]
 
 type TokenApi =
-       GetTransfersByTransactionHash
+       GetUserBalanceAtBlock
+  :<|> GetTransfersByTransactionHash
   :<|> GetTransfersBySender
   :<|> GetTransfersByReceiver
   :<|> GetRichestNeighbors
+  :<|> GetRichestNeighborsK
+
+type Api =
+  SwaggerSchemaUI "swagger-ui" "swagger.json"
+  :<|> TokenApi
 
 tokenApi :: Proxy TokenApi
 tokenApi = Proxy
 
-api :: Proxy (GetSwagger :<|> TokenApi)
+api :: Proxy Api
 api = Proxy
