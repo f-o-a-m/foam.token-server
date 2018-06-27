@@ -3,6 +3,7 @@
 module Queries.Balance
   ( getBalances
   , getRichestNeighbors
+  , getRichestNeighborsK
   ) where
 
 import Composite.Record
@@ -66,6 +67,33 @@ getRichestNeighbors bn userAddress = do
         pure . take 10 . L.sortOn (Down . snd) $ pairs'
   where
     toBN = fromInteger @Quantity . toInteger
+
+
+getRichestNeighborsK
+  :: (MonadReader AppConfig m, MonadIO m)
+  => Quantity
+  -> Int
+  -> Address
+  -> m [(Address, Integer)]
+getRichestNeighborsK bn k userAddress = do
+    (start, end) <- getBlockRange
+    cfg <- ask
+    let st = EthState {appConfig = cfg}
+    liftIO $ do
+      e <- initEnv (stateSet st stateEmpty) ()
+      runHaxl e $ do
+        traders <- getAllTraders (toBN start) (toBN end) k userAddress
+        pairs <- forM traders $ \t -> do
+          bal <- getBalanceOf bn t
+          pure (t, toInteger bal)
+        let pairs' = filter ((> 0) . snd) pairs
+        pure . take 10 . L.sortOn (Down . snd) $ pairs'
+  where
+    toBN = fromInteger @Quantity . toInteger
+    getAllTraders _ _ 0 _ = pure []
+    getAllTraders s e k' addr = do
+      traders <- getTradersInBlockRange s e addr
+      concat <$> mapM (getAllTraders s e (k'-1)) traders
 
 -- | Request Algebra
 data EthReq a where
