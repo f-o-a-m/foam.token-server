@@ -12,6 +12,7 @@ import           Data.Swagger                      (ToParamSchema,
                                                     ToSchema (..),
                                                     toParamSchema)
 import           Data.Text                         (Text, unpack)
+import qualified Data.Text  as T
 import           Network.Ethereum.ABI.Prim.Address
 import           Opaleye                           (Column, PGBytea)
 import           Opaleye.Constant                  (Constant (..), constant)
@@ -43,4 +44,6 @@ instance DefaultJsonFormat Address where
   defaultJsonFormat = aesonJsonFormat
 
 instance FromHttpApiData Address where
-  parseQueryParam = Right . fromString . unpack
+  parseQueryParam = Right . fromString . unpack . maybeTrim
+    where
+      maybeTrim a = if T.take 2 a == "0x" then T.drop 2 a else a

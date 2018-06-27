@@ -27,15 +27,19 @@ getTransfersByHash
      , MonadIO m
      )
   =>  Transaction.FTxHash
-  -> m [Transfer.ApiTransferJson]
+  -> m [(Transaction.ApiTransactionJson, Transfer.ApiTransferJson)]
 getTransfersByHash (Val txHash) = do
   conn <- pgConn <$> ask
-  (transfers :: [Record Transfer.DBTransfer]) <- liftIO . runQuery conn $ proc () -> do
-    transfer <- queryTable Transfer.transferTable -< ()
-    restrict -< transfer ^. Transaction.cTxHash .== constant txHash
-    returnA -< transfer
-  pure $ flip map transfers $ \transfer ->
-    transfer ^. _Unwrapping Transfer.ApiTransferJson
+  let query = proc () -> do
+        r@(tx,transfer) <- txTransferJoin -< ()
+        restrict -< (transfer ^. Transaction.cTxHash .== constant txHash)
+                       .&& (tx ^. Transaction.cTxHash .== constant txHash)
+        returnA -< r
+  (transfers :: [(Record Transaction.DBTransaction, Record Transfer.DBTransfer)]) <- liftIO $ runQuery conn query
+  pure $ flip map transfers $ \(tx, transfer) ->
+    ( tx ^. _Unwrapping Transaction.ApiTransactionJson
+    , transfer ^. _Unwrapping Transfer.ApiTransferJson
+    )
 
 -- | Get all transfers in a block range based on a `from` account.
 getTransfersFromInRange
@@ -114,6 +118,13 @@ transfersByBlockQuery start end = orderBy (desc fst) $ proc () -> do
   restrict -< transfer ^. Transaction.cTxHash .== tx ^. Transaction.cTxHash
   restrict -< tx ^. Transaction.cBlockNumber .>= constant start .&& tx ^. Transaction.cBlockNumber .<= constant end
   returnA -< (tx ^. Transaction.cBlockNumber, transfer)
+
+txTransferJoin
+  :: Query (Record Transaction.DBTransactionCols, Record Transfer.DBTransferCols)
+txTransferJoin = proc () -> do
+  transfer <- queryTable Transfer.transferTable -< ()
+  tx <- queryTable Transaction.transactionTable -< ()
+  returnA -< (tx, transfer)
 
 -- | get the address of anyone who received tokens in a given block range
 allReceiversInRange

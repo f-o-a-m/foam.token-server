@@ -28,7 +28,7 @@ import Data.Default (def)
 -- | -- a singler transaction can cause more than one transfer.
 getTransfersByTransactionHash
   :: Transaction.FTxHash
-  -> AppHandler [Transfer.ApiTransferJson]
+  -> AppHandler [(Transaction.ApiTransactionJson, Transfer.ApiTransferJson)]
 getTransfersByTransactionHash = getTransfersByHash
 
 getUserBalanceAtBlock

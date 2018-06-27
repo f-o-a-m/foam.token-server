@@ -17,7 +17,7 @@ type GetUserBalanceAtBlock =
 type GetTransfersByTransactionHash =
      "transfers"
   :> Capture "transaction_hash" Transaction.FTxHash
-  :> Get '[JSON] [Transfer.ApiTransferJson]
+  :> Get '[JSON] [(Transaction.ApiTransactionJson, Transfer.ApiTransferJson)]
 
 type GetTransfersBySender =
      "transfers_by_sender"
