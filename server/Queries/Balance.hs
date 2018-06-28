@@ -30,6 +30,15 @@ import           Types.Application                 (AppConfig (..), web3Request)
 import Data.Monoid
 
 
+balanceFlags :: Flags
+balanceFlags =
+  defaultFlags { trace = 3
+               , report = 5
+               , caching = 1
+               , recording = 0
+               }
+
+
 getBalances
   :: ( MonadReader AppConfig m
      , MonadIO m
@@ -59,7 +68,7 @@ getRichestNeighbors bn n userAddress = do
     let st = EthState {appConfig = cfg}
     liftIO $ do
       e <- initEnv (stateSet st stateEmpty) ()
-      runHaxl e $ do
+      runHaxl e {flags = balanceFlags} $ do
         traders <- getTradersInBlockRange (toBN start) (toBN end) userAddress
         pairs <- forM traders $ \trader -> do
           bal <- toInteger <$> getBalanceOf bn trader
@@ -83,21 +92,21 @@ getRichestNeighborsK bn n k userAddress = do
     let st = EthState {appConfig = cfg}
     liftIO $ do
       e <- initEnv (stateSet st stateEmpty) ()
-      runHaxl e $ do
-        traders <- getAllTraders (toBN start) (toBN end) k userAddress
-        pairs <- forM traders $ \t -> do
-          bal <- getBalanceOf bn t
-          pure (t, toInteger bal)
-        let pairs' = filter ((> 0) . snd) pairs
-        pure . take n . L.sortOn (Down . snd) $ pairs'
+      runHaxl e {flags = balanceFlags} $ do
+        neighs <- getAllNeighbors (toBN start) (toBN end) k userAddress
+        pure . take n . L.sortOn (Down . snd) $ neighs
   where
     toBN = fromInteger @Quantity . toInteger
-    getAllTraders :: Quantity -> Quantity -> Int -> Address -> GenHaxl u [Address]
-    getAllTraders _ _ 0 _ = pure []
-    getAllTraders s e k' addr = do
+    getAllNeighbors :: Quantity -> Quantity -> Int -> Address -> GenHaxl u [(Address, Integer)]
+    getAllNeighbors _ _ 0 _ = pure []
+    getAllNeighbors s e k' addr = do
       traders <- getTradersInBlockRange s e addr
-      rest <- concat <$> mapM (getAllTraders s e (k'-1)) traders
-      pure $ traders <> rest
+      pairs <- forM traders $ \t -> do
+        bal <- getBalanceOf bn t
+        pure (t, toInteger bal)
+      let pairs' = filter ((> 0) . snd) pairs
+      rest <- concat <$> mapM (getAllNeighbors s e (k'-1)) (map fst pairs')
+      pure $ pairs' <> rest
 
 -- | Request Algebra
 data EthReq a where
