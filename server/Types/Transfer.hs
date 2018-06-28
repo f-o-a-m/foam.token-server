@@ -1,30 +1,31 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeApplications           #-}
 
 
 module Types.Transfer where
 
 import           Composite
 import           Composite.Aeson
-import           Composite.Aeson.TH   (makeRecordJsonWrapper)
-import           Composite.Opaleye    (defaultRecTable)
-import           Composite.Swagger.TH (makeToSchema)
-import           Composite.TH         (withLensesAndProxies)
-import           Control.Lens.TH      (makeWrapped)
-import           Data.Aeson           (ToJSON, FromJSON)
-import           Data.Text            (Text)
+import           Composite.Aeson.TH                (makeRecordJsonWrapper)
+import           Composite.Opaleye                 (defaultRecTable)
+import           Composite.Swagger.TH              (makeToSchema)
+import           Composite.TH                      (withLensesAndProxies)
+import           Control.Lens.TH                   (makeWrapped)
+import           Data.Aeson                        (FromJSON, ToJSON)
+import           Data.Profunctor.Product.Default   (Default (..))
+import           Data.Proxy
+import qualified Data.Scientific                   as Sci
 import           Data.Swagger
-import           Opaleye              (Column, PGNumeric, PGText, Table (..))
-import           Types.Transaction    (CTxHash, FBlockNumber,
-                                       FTxHash)
-
-import Data.Proxy
-import Opaleye.Internal.RunQuery (QueryRunnerColumnDefault(..), fieldQueryRunnerColumn)
-import Opaleye.Constant (Constant(..), constant)
-import Data.Profunctor.Product.Default (Default(..))
-import GHC.Generics (Generic)
-import qualified Data.Scientific as Sci
+import           GHC.Generics                      (Generic)
+import           Network.Ethereum.ABI.Prim.Address
+import           Opaleye                           (Column, PGBytea, PGNumeric,
+                                                    Table (..))
+import           Opaleye.Constant                  (Constant (..), constant)
+import           Opaleye.Internal.RunQuery         (QueryRunnerColumnDefault (..),
+                                                    fieldQueryRunnerColumn)
+import           Types.Transaction                 (CTxHash, FBlockNumber,
+                                                    FTxHash)
 
 --------------------------------------------------------------------------------
 -- | Token Transfers
@@ -44,16 +45,16 @@ instance QueryRunnerColumnDefault PGNumeric Value where
   queryRunnerColumnDefault = Value . truncate . toRational <$> fieldQueryRunnerColumn @Sci.Scientific
 
 instance Default Constant Value (Column PGNumeric) where
-  def = Constant $ constant @Sci.Scientific . fromInteger . unValue
+  def = Constant $  constant @Sci.Scientific . fromInteger . unValue
 
 withLensesAndProxies [d|
-  type FFrom  = "from"  :-> Text
-  type CFrom  = "from"  :-> Column PGText
-  type FTo    = "to"    :-> Text
-  type CTo    = "to"    :-> Column PGText
+  type FFrom  = "from"  :-> Address
+  type CFrom  = "from"  :-> Column PGBytea
+  type FTo    = "to"    :-> Address
+  type CTo    = "to"    :-> Column PGBytea
   type FValue = "value" :-> Value
   type CValue = "value" :-> Column PGNumeric
-  type FAddress = "address" :-> Text
+  type FAddress = "address" :-> Address
   |]
 
 transferTable :: Table (Record DBTransferCols) (Record DBTransferCols)

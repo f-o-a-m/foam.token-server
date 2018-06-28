@@ -3,8 +3,7 @@
 
 module Contracts.ERC20 where
 
-import           Network.Ethereum.Web3
-import           Network.Ethereum.Web3.TH
+import           Network.Ethereum.Contract.TH
 
 [abiFrom|abis/ERC20.json|]
 

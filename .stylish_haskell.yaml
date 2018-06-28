@@ -195,3 +195,5 @@ language_extensions:
    - ScopedTypeVariables
    - FlexibleContexts
    - FlexibleInstances
+   - RecordWildCards
+   - Arrows

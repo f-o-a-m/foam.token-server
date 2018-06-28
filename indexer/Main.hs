@@ -1,45 +1,53 @@
 module Main where
 
-import Control.Monad.IO.Class (MonadIO(..))
-import Control.Monad (void)
-import Composite.Record
-import Control.Monad.Reader (ask)
-import Database.PostgreSQL.Simple (Connection)
-import Data.Int (Int64)
-import Data.Text (pack)
-import Queries.Transaction (mostRecentTransactionBlockQuery)
-import Types.Application (HttpProvider, makeConnection)
-import Types.Transaction as Transaction
-import Types.Transfer as Transfer
-import Network.Ethereum.Web3
-import Network.Ethereum.Web3.Types
-import Network.Ethereum.Web3.Encoding.Int (unUIntN)
-import Network.Ethereum.Web3.Address (toText, fromText)
-import Network.Ethereum.Web3.TH
-import Opaleye (constant, runInsertMany, runQuery, count, aggregate)
-import System.Environment (lookupEnv, getEnv)
-import Data.Binary (encode)
-import qualified Contracts.ERC20 as ERC20
+import           Composite.Record
+import qualified Contracts.ERC20                   as ERC20
+import           Control.Exception                 (try)
+import           Control.Monad                     (void)
+import           Control.Monad.IO.Class            (MonadIO (..))
+import           Control.Monad.Reader              (ask)
+import           Data.Binary                       (encode)
+import           Data.ByteArray                    as BA
+import           Data.ByteArray.Sized              (unSizedByteArray)
+import qualified Data.ByteString.Base16            as B16
+import           Data.Default                      (Default, def)
+import           Data.Int                          (Int64)
+import           Data.Text                         (pack)
+import qualified Data.Text.Encoding                as T
+import           Database.PostgreSQL.Simple        (Connection)
+import           Network.Ethereum.ABI.Prim.Address
+import           Network.Ethereum.ABI.Prim.Int
+import           Network.Ethereum.Contract.Event
+import           Network.Ethereum.Web3
+import           Network.Ethereum.Web3.Provider
+import           Network.Ethereum.Web3.Types
+import           Opaleye                           (aggregate, constant, count,
+                                                    runInsertMany, runQuery)
+import           Queries.Transaction               (mostRecentTransactionBlockQuery)
+import           System.Environment                (getEnv, lookupEnv)
+import           Types.Application
+import           Types.Transaction                 as Transaction
+import           Types.Transfer                    as Transfer
+
+import           Data.String                       (fromString)
 
 main :: IO ()
 main = do
   conn <- makeConnection
-  eaddress <- fromText . pack <$> getEnv "TOKEN_ADDRESS"
-  case eaddress of
-    Left err -> error err
-    Right address -> do
-      start <- getStartingBlock conn
-      void $ runWeb3 $ eventLoop conn address start
+  Web3Config{..} <- makeWeb3Config
+  address <- fromString <$> getEnv "TOKEN_ADDRESS"
+  start <- getStartingBlock conn
+  void $ runWeb3With manager provider $ eventLoop conn address start
 
 getStartingBlock
   :: Connection
-  -> IO BlockNumber
+  -> IO Quantity
 getStartingBlock conn = do
   mstart <- lookupEnv "STARTING_BLOCK"
   case mstart of
     Just bn -> do
       print bn
-      return . BlockNumber $ read bn
+      return . Quantity $ read bn
     Nothing -> do
       print ("No Specified Starting Block" :: String)
       mLastBlock <- getLastProcessedBlock conn
@@ -47,7 +55,7 @@ getStartingBlock conn = do
         Nothing -> error "No Transfer Transactions found in database, you must specify a Starting Block"
         Just bn -> do
           print $ "Starting Indexer from BlockNumber " ++ show bn
-          return $ BlockNumber (toInteger bn)
+          return $ Quantity (toInteger bn)
 
 getLastProcessedBlock
   :: Connection
@@ -55,26 +63,29 @@ getLastProcessedBlock
 getLastProcessedBlock conn = do
   (bns :: [Int64]) <- runQuery conn mostRecentTransactionBlockQuery
   case bns of
-    [] -> return Nothing
+    []   -> return Nothing
     [bn] -> return $ Just bn
-    _ -> error "Impossible Query -- got multiple most recent blocks."
+    _    -> error "Impossible Query -- got multiple most recent blocks."
 
 eventLoop
   :: Connection
   -> Address
-  -> BlockNumber
-  -> Web3 HttpProvider ()
+  -> Quantity
+  -> Web3 ()
 eventLoop conn addr start =  do
-  let fltr = (eventFilter addr :: Filter ERC20.Transfer) {filterFromBlock = BlockWithNumber start}
-  void $ eventMany' fltr 50 $ \t@ERC20.Transfer{..} -> do
+  let fltr = (def  :: Filter ERC20.Transfer) { filterAddress = Just [addr]
+                                             , filterFromBlock = BlockWithNumber start
+                                             }
+  liftIO $ print $ show fltr
+  void $ eventMany' fltr 100 $ \t@ERC20.Transfer{..} -> do
     change <- ask
     liftIO . print $ "Got Transfer : " ++ show t
-    let (BlockNumber bn) = changeBlockNumber change
-        txHash = changeTransactionHash change
-        logAddress = toText . changeAddress $ change
-        value = Transfer.Value . unUIntN $ transferValue_
+    let Just (Quantity bn) = changeBlockNumber change
+        Just txHash = T.decodeUtf8 . B16.encode . BA.convert . unSizedByteArray <$> changeTransactionHash change
+        logAddress = changeAddress $ change
+        value = Transfer.Value . toInteger $ transferValue_
         (transaction :: Record Transaction.DBTransaction) =  txHash :*: logAddress :*: fromInteger bn :*: RNil
-        (transfer :: Record Transfer.DBTransfer) =  txHash :*: toText transferFrom_ :*: toText transferTo_ :*: value :*: RNil
+        (transfer :: Record Transfer.DBTransfer) =  txHash :*: transferFrom_ :*: transferTo_ :*: value :*: RNil
     _ <- liftIO $ runInsertMany conn Transaction.transactionTable [constant transaction]
     _ <- liftIO $ runInsertMany conn Transfer.transferTable [constant transfer]
     return ContinueEvent

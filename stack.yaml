@@ -1,30 +1,31 @@
-resolver: lts-11.2
+resolver: lts-11.7
 
 packages:
 - .
 - location:
     git: https://github.com/f-o-a-m/hs-web3
-    commit: 814fd555f128efac8855843cd52f4848deae739c
+    commit: b45fcbf4f5492c823589194639defe204ec3d5dc
+  extra-dep: true
+- location:
+    git: https://github.com/tomjaguarpaw/haskell-opaleye
+    commit: 1f99306b7eb8cc3c3274f615444200738bdfa3b4
   extra-dep: true
 - location:
     git: https://github.com/blinky3713/composite
     commit: ae46b52f0ea6f963a89aa1b2e3aa051a58adebfd
+  extra-dep: true
   subdirs:
     - composite-aeson
     - composite-base
     - composite-opaleye
     - composite-swagger
   extra-dep: true
-- location:
-    git: https://github.com/blinky3713/haskell-opaleye
-    commit: e1c79ab13e232f892b0211c4f055464712f0b0f5
-  extra-dep: true
 
 extra-deps:
- - sized-0.3.0.0
- - equational-reasoning-0.5.1.0
- - ghc-typelits-presburger-0.2.0.0
- - type-natural-0.8.0.0
+ - relapse-1.0.0.0
+ - secp256k1-0.5.2
+ - haxl-2.0.1.0
+
 
 allow-newer: true
 

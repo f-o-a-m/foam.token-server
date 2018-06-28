@@ -20,6 +20,7 @@ first you want to start a postrgres instance and create the token_db
 
 run the initial migration to setup the database
 ```bash
+> docker exec -it -u postgres <PG_CONTAINER_ID> psql -c "create database token_db;"
 > make create-token-db
 ```
 

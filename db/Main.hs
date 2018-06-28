@@ -2,10 +2,10 @@
 
 module Main where
 
-import Data.Int (Int64)
-import Database.PostgreSQL.Simple (Connection, execute_)
-import Database.PostgreSQL.Simple.SqlQQ
-import Types.Application (makeConnection)
+import           Data.Int                         (Int64)
+import           Database.PostgreSQL.Simple       (Connection, execute_)
+import           Database.PostgreSQL.Simple.SqlQQ
+import           Types.Application                (makeConnection)
 
 main :: IO ()
 main = do
@@ -22,7 +22,7 @@ createTransactionsTable conn = execute_ conn q
               "id" serial PRIMARY KEY UNIQUE,
               "transactionHash" text not null,
               "blockNumber" integer not null,
-              "address" text not null
+              "address" bytea not nullp
             );
         |]
 
@@ -33,8 +33,8 @@ createTransfersTable conn = execute_ conn q
             CREATE TABLE transfers (
               "id" serial PRIMARY KEY UNIQUE,
               "transactionHash" text not null,
-              "from" text not null,
-              "to" text not null,
+              "from" bytea not null,
+              "to" bytea not null,
               "value" numeric not null
             );
         |]

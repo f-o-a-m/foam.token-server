@@ -1,51 +1,59 @@
+{-# LANGUAGE NamedFieldPuns #-}
+
 module Types.Application
   ( AppHandler
   , AppConfig(..)
-  , HttpProvider
+  , Web3Config(..)
+  , makeWeb3Config
   , makeAppConfig
   , transformAppHandler
-  , web3Request
   , makeConnection
+  , web3Request
   ) where
 
-import           Control.Monad.Except           (ExceptT, MonadError)
-import           Control.Monad.IO.Class         (MonadIO (..))
-import           Control.Monad.Reader           (MonadReader, ReaderT,
-                                                 runReaderT)
-import           Data.String                    (fromString)
-import           Database.PostgreSQL.Simple     (ConnectInfo (..), Connection,
-                                                 connect)
-import           Network.Ethereum.Web3.Address
+import           Control.Monad.Except              (ExceptT, MonadError)
+import           Control.Monad.IO.Class            (MonadIO (..))
+import           Control.Monad.Reader              (MonadReader, ReaderT, ask,
+                                                    runReaderT)
+import           Data.String                       (fromString)
+import           Database.PostgreSQL.Simple        (ConnectInfo (..),
+                                                    Connection, connect)
+import           Network.Ethereum.ABI.Prim.Address
 import           Network.Ethereum.Web3.Provider
-import           Network.Ethereum.Web3.Types    (Web3, Web3Error)
-import           Servant                        (ServantErr)
-import           Servant.Server                 (Handler (..))
-import           System.Environment             (getEnv)
-import           System.IO.Unsafe               (unsafePerformIO)
+import           Network.HTTP.Client               (Manager, newManager)
+import           Network.HTTP.Client.TLS           (tlsManagerSettings)
+import           Servant                           (ServantErr)
+import           Servant.Server                    (Handler (..))
+import           System.Environment                (getEnv)
 
 
--- | Web3 Config
-data HttpProvider
+data Web3Config =
+  Web3Config { manager  :: Manager
+             , provider :: Provider
+             }
 
-instance Provider HttpProvider where
-  rpcNode = return httpProvider
-
-httpProvider :: RPCNode
-httpProvider = unsafePerformIO $ do
-  uri <- getEnv "NODE_URL"
-  makeRPCNode uri
-{-# NOINLINE httpProvider #-}
-
-web3Request
-  :: Web3 HttpProvider a
-  -> IO (Either Web3Error a)
-web3Request = runWeb3
+makeWeb3Config :: IO Web3Config
+makeWeb3Config = do
+  mgr <- liftIO $ newManager tlsManagerSettings
+  url <- getEnv "NODE_URL"
+  pure $ Web3Config mgr (Provider (HttpProvider url) Nothing)
 
 -- | App Config
 data AppConfig =
   AppConfig { pgConn       :: Connection
+            , web3         :: Web3Config
             , erc20Address :: Address
             }
+
+web3Request
+  :: ( MonadReader AppConfig m
+     , MonadIO m
+     )
+  => Web3 a
+  -> m (Either Web3Error a)
+web3Request action = do
+  Web3Config{..} <- web3 <$> ask
+  liftIO $ runWeb3With manager provider action
 
 makeConnection :: IO Connection
 makeConnection = do
@@ -62,7 +70,9 @@ makeAppConfig :: IO AppConfig
 makeAppConfig = do
   pg <- makeConnection
   addr <- fromString <$> getEnv "TOKEN_ADDRESS"
+  web3 <- makeWeb3Config
   pure AppConfig { pgConn = pg
+                 , web3
                  , erc20Address = addr
                  }
 

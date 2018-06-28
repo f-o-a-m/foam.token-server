@@ -28,15 +28,19 @@ library
   build-depends:       base >= 4.7 && < 5
                      , aeson
                      , async
+                     , base16-bytestring
                      , binary
                      , bytestring
                      , composite-aeson
                      , composite-base
                      , composite-opaleye
                      , composite-swagger
+                     , containers
                      , data-default
                      , hashable
                      , haxl
+                     , http-client
+                     , http-client-tls
                      , http-api-data
                      , lens
                      , mtl
@@ -47,6 +51,7 @@ library
                      , scientific
                      , servant-server
                      , servant-swagger
+                     , servant-swagger-ui
                      , string-conversions
                      , swagger2
                      , text
@@ -71,8 +76,7 @@ library
                      , DeriveGeneric
                      , RecordWildCards
                      , RankNTypes
-
-  ghc-options: -Werror, -Wall
+  ghc-options: -Werror -Wall
 
 executable token-server
   hs-source-dirs:      app
@@ -100,6 +104,9 @@ executable token-indexer
                      , composite-base
                      , composite-opaleye
                      , mtl
+                     , data-default
+                     , base16-bytestring
+                     , memory
                      , opaleye
                      , postgresql-simple
                      , text
